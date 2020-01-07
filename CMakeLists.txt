@@ -38,13 +38,11 @@ if(BUILD_CUDA)
 endif()
 
 add_subdirectory(Black-Scholes)
-add_subdirectory(Bonds/CPU)
+add_subdirectory(Bonds)
 add_subdirectory(Monte-Carlo)
 add_subdirectory(Repo/CPU)
 
 if(BUILD_CUDA)
-    #add_subdirectory(Black-Scholes/CUDA)
-    add_subdirectory(Bonds/CUDA)
     add_subdirectory(Repo/CUDA)
 endif()
 

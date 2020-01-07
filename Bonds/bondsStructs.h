@@ -2,8 +2,8 @@
 //Scott Grauer-Gray
 //Structs for running the bonds application
 
-#ifndef BONDS_STRUCTS_CUH
-#define BONDS_STRUCTS_CUH
+#ifndef BONDS_STRUCTS_H
+#define BONDS_STRUCTS_H
 
 typedef double dataType;
 
@@ -21,7 +21,7 @@ typedef double dataType;
 #define USE_EXACT_DAY 0
 #define USE_SERIAL_NUMS 1
 
-#define QL_EPSILON_GPU 0.000000000000000001f 
+#define QL_EPSILON_GPU 0.000000000000000001f
 
 #define COMPUTE_AMOUNT -1
 
@@ -76,7 +76,7 @@ typedef struct
 	bondsDateStruct paymentDate;
 	bondsDateStruct accrualStartDate;
 	bondsDateStruct accrualEndDate;
-	dataType amount;	
+	dataType amount;
 } couponStruct;
 
 
@@ -119,7 +119,7 @@ typedef struct
 	bool includecurrDateFlows;
 	bondsDateStruct currDate;
 	bondsDateStruct npvDate;
-	
+
 } irrFinderStruct;
 
 
@@ -140,4 +140,4 @@ typedef struct
 
 
 
-#endif //BONDS_STRUCTS_CUH
+#endif //BONDS_STRUCTS_H

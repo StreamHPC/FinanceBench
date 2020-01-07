@@ -2,43 +2,41 @@
 //Scott Grauer-Gray sgrauerg@gmail.com
 //Contains main function for running manual CUDA and CPU bonds application
 
-#include "bondsStructs.h"
-#include "bondsKernelsCpu.c"
+#ifdef BUILD_CUDA
+#include "bondsKernelsGpu.cuh"
+#endif
+#include "bondsKernelsCpu.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <sys/time.h> 
-#include <stdio.h>
-#include <time.h>
+#include <sys/time.h>
 
 #define MIN(a, b)  (((a) < (b)) ? (a) : (b))
 #define MAX(a, b)  (((a) > (b)) ? (a) : (b))
 
 #define NUM_BONDS_RUN 1000000
 
-
-int monthLengthCpu(int month, bool leapYear) 
+int monthLengthCpu(int month, bool leapYear)
 {
 	int MonthLength[] = {
 			31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 	};
-    
+
 	int MonthLeapLength[] = {
 			31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 	};
-    
+
 	return (leapYear? MonthLeapLength[month-1] : MonthLength[month-1]);
 }
 
-
-int monthOffsetCpu(int m, bool leapYear) 
+int monthOffsetCpu(int m, bool leapYear)
 {
 	int MonthOffset[] = {
 			0,  31,  59,  90, 120, 151,   // Jan - Jun
 			181, 212, 243, 273, 304, 334,   // Jun - Dec
 			365     // used in dayOfMonth to bracket day
 	};
-    
+
 	int MonthLeapOffset[] = {
 			0,  31,  60,  91, 121, 152,   // Jan - Jun
 			182, 213, 244, 274, 305, 335,   // Jun - Dec
@@ -47,7 +45,6 @@ int monthOffsetCpu(int m, bool leapYear)
 
 	return (leapYear? MonthLeapOffset[m-1] : MonthOffset[m-1]);
 }
-
 
 int yearOffsetCpu(int y)
 {
@@ -121,8 +118,7 @@ int yearOffsetCpu(int y)
         return YearOffset[y-1900];
 }
 
-
-bool isLeapCpu(int y) 
+bool isLeapCpu(int y)
 {
         bool YearIsLeap[] = {
             // 1900 is leap in agreement with Excel's bug
@@ -194,8 +190,7 @@ bool isLeapCpu(int y)
 	return YearIsLeap[y-1900];
 }
 
-
-bondsDateStruct intializeDateCpu(int d, int m, int y) 
+bondsDateStruct intializeDateCpu(int d, int m, int y)
 {
 	bondsDateStruct currDate;
 
@@ -211,9 +206,7 @@ bondsDateStruct intializeDateCpu(int d, int m, int y)
 	return currDate;
 }
 
-
-
-void runRepoEngine() 
+void runRepoEngine()
 {
 	//can run multiple times with different number of bonds by uncommenting these lines
 	//int nBondsArray[] = {100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000};
@@ -221,14 +214,11 @@ void runRepoEngine()
 	//int numTime;
 	//for (numTime=0; numTime < 14; numTime++)
 	{
-
-		int numBonds = NUM_BONDS_RUN;//nBondsArray[numTime];	
+		int numBonds = NUM_BONDS_RUN;//nBondsArray[numTime];
 		printf("\nNumber of Bonds: %d\n\n", numBonds);
 
-		
-
 		inArgsStruct inArgsHost;
-		
+
 		inArgsHost.discountCurve = (bondsYieldTermStruct*)malloc(numBonds*sizeof(bondsYieldTermStruct));
 		inArgsHost.repoCurve = (bondsYieldTermStruct*)malloc(numBonds*sizeof(bondsYieldTermStruct));
 		inArgsHost.currDate = (bondsDateStruct*)malloc(numBonds*sizeof(bondsDateStruct));
@@ -236,15 +226,16 @@ void runRepoEngine()
 		inArgsHost.bondCleanPrice = (dataType*)malloc(numBonds*sizeof(dataType));
 		inArgsHost.bond = (bondStruct*)malloc(numBonds*sizeof(bondStruct));
 		inArgsHost.dummyStrike = (dataType*)malloc(numBonds*sizeof(dataType));
-		
-		 srand ( time(NULL) );
-	
+
+        unsigned int seed = 123;
+        srand(seed);
+
 		int numBond;
 		for (numBond = 0; numBond < numBonds; numBond++)
 		{
 
-				
-			
+
+
 			dataType repoRate = 0.07;
 
 			//int repoSettlementDays = 0;
@@ -264,8 +255,8 @@ void runRepoEngine()
 			bond.startDate = bondIssueDate;
 			bond.maturityDate = bondMaturityDate;
 			bond.rate = 0.08 + ((float)rand()/(float)RAND_MAX - 0.5)*0.1;
-			
-			//dataType bondCoupon = bond.rate; 
+
+			//dataType bondCoupon = bond.rate;
 			dataType bondCouponFrequency = 2;
 
 			//int bondSettlementDays = 0;
@@ -288,7 +279,7 @@ void runRepoEngine()
 			bondCurve.compounding = COMPOUNDED_INTEREST;
 			bondCurve.frequency = bondCouponFrequency;
 
-		
+
 
 
 			dataType dummyStrike = 91.5745;
@@ -310,7 +301,7 @@ void runRepoEngine()
 			inArgsHost.bond[numBond] = bond;
 			inArgsHost.dummyStrike[numBond] = dummyStrike;
 
-			
+
 		}
 		printf("Inputs for bond with index %d\n", numBonds/2);
 		printf("Bond Issue Date: %d-%d-%d\n", inArgsHost.bond[numBonds/2].startDate.month, inArgsHost.bond[numBonds/2].startDate.day, inArgsHost.bond[numBonds/2].startDate.year);
@@ -330,9 +321,18 @@ void runRepoEngine()
 		resultsFromGpu.cleanPrice = (dataType*)malloc(numBonds*sizeof(dataType));;
 		resultsFromGpu.bondForwardVal = (dataType*)malloc(numBonds*sizeof(dataType));;
 
+        long seconds, useconds;
+		float mtimeCpu;
+		float mtimeGpu;
+
+		struct timeval start;
+		struct timeval end;
+        double totPrice = 0.0;
+		int numBond1;
+
 		//inArgsStruct inArgsGpu;
 		//resultsStruct resultsGpu;
-
+        #ifdef BUILD_CUDA
 		bondsYieldTermStruct* discountCurveGpu;
 		bondsYieldTermStruct* repoCurveGpu;
 		bondsDateStruct* currDateGpu;
@@ -340,27 +340,34 @@ void runRepoEngine()
 		dataType* bondCleanPriceGpu;
 		bondStruct* bondGpu;
 		dataType* dummyStrikeGpu;
-		
+
 		dataType* dirtyPriceGpu;
 		dataType* accruedAmountCurrDateGpu;
 		dataType* cleanPriceGpu;
 		dataType* bondForwardValGpu;
 
-		
+		cudaMalloc(&discountCurveGpu, numBonds*sizeof(bondsYieldTermStruct));
+		cudaMalloc(&repoCurveGpu, numBonds*sizeof(bondsYieldTermStruct));
+		cudaMalloc(&currDateGpu, numBonds*sizeof(bondsDateStruct));
+		cudaMalloc(&maturityDateGpu, numBonds*sizeof(bondsDateStruct));
+		cudaMalloc(&bondCleanPriceGpu, numBonds*sizeof(dataType));
+		cudaMalloc(&bondGpu, numBonds*sizeof(bondStruct));
+		cudaMalloc(&dummyStrikeGpu, numBonds*sizeof(dataType));
 
+		cudaMalloc(&dirtyPriceGpu, numBonds*sizeof(dataType));
+		cudaMalloc(&accruedAmountCurrDateGpu, numBonds*sizeof(dataType));
+		cudaMalloc(&cleanPriceGpu, numBonds*sizeof(dataType));
+		cudaMalloc(&bondForwardValGpu, numBonds*sizeof(dataType));
 
-		
-		long seconds, useconds;    
-		float mtimeCpu;
-		float mtimeGpu;
+		cudaMemcpy(discountCurveGpu, inArgsHost.discountCurve, numBonds*sizeof(bondsYieldTermStruct), cudaMemcpyHostToDevice);
+		cudaMemcpy(repoCurveGpu, inArgsHost.repoCurve, numBonds*sizeof(bondsYieldTermStruct), cudaMemcpyHostToDevice);
+		cudaMemcpy(currDateGpu, inArgsHost.currDate, numBonds*sizeof(bondsDateStruct), cudaMemcpyHostToDevice);
+		cudaMemcpy(maturityDateGpu, inArgsHost.maturityDate, numBonds*sizeof(bondsDateStruct), cudaMemcpyHostToDevice);
+		cudaMemcpy(bondCleanPriceGpu, inArgsHost.bondCleanPrice, numBonds*sizeof(dataType), cudaMemcpyHostToDevice);
+		cudaMemcpy(bondGpu, inArgsHost.bond, numBonds*sizeof(bondStruct), cudaMemcpyHostToDevice);
+		cudaMemcpy(dummyStrikeGpu, inArgsHost.dummyStrike, numBonds*sizeof(dataType), cudaMemcpyHostToDevice);
 
-		struct timeval start;
-		struct timeval end;
-
-
-
-		 
-  		inArgsStruct inArgs;
+        inArgsStruct inArgs;
   		inArgs.discountCurve    = discountCurveGpu;
   		inArgs.repoCurve        = repoCurveGpu;
   		inArgs.currDate   = currDateGpu;
@@ -368,23 +375,64 @@ void runRepoEngine()
   		inArgs.bondCleanPrice   = bondCleanPriceGpu;
   		inArgs.bond             = bondGpu;
   		inArgs.dummyStrike      = dummyStrikeGpu;
-  
+
   		resultsStruct results;
   		results.dirtyPrice                = dirtyPriceGpu;
   		results.accruedAmountCurrDate  = accruedAmountCurrDateGpu;
   		results.cleanPrice                = cleanPriceGpu;
   		results.bondForwardVal         = bondForwardValGpu;
-    
-		
-		
 
+		gettimeofday(&start, NULL);
+		dim3 grid((ceil(((float)numBonds)/((float)256.0f))), 1, 1);
+    	dim3 threads(256, 1, 1);
+		getBondsResultsGpu<<<grid, threads>>>(inArgs, results, numBonds);
+		cudaDeviceSynchronize();
+
+		gettimeofday(&end, NULL);
+
+		cudaMemcpy(resultsFromGpu.dirtyPrice, dirtyPriceGpu, numBonds*sizeof(dataType), cudaMemcpyDeviceToHost);
+		cudaMemcpy(resultsFromGpu.accruedAmountCurrDate, accruedAmountCurrDateGpu, numBonds*sizeof(dataType), cudaMemcpyDeviceToHost);
+		cudaMemcpy(resultsFromGpu.cleanPrice, cleanPriceGpu, numBonds*sizeof(dataType), cudaMemcpyDeviceToHost);
+		cudaMemcpy(resultsFromGpu.bondForwardVal, bondForwardValGpu, numBonds*sizeof(dataType), cudaMemcpyDeviceToHost);
+
+		seconds  = end.tv_sec  - start.tv_sec;
+		useconds = end.tv_usec - start.tv_usec;
+
+		mtimeGpu = ((seconds) * 1000 + ((float)useconds)/1000.0) + 0.5f;
+		printf("Run on GPU\n");
+		printf("Processing time on GPU (CUDA): %f (ms)  \n\n", mtimeGpu);
+
+		for (numBond1= 0; numBond1< numBonds; numBond1++)
+		{
+			totPrice += resultsFromGpu.dirtyPrice[numBond1];
+		}
+
+		printf("Sum of output dirty prices on GPU: %f\n", totPrice);
+		printf("Outputs on GPU for bond with index %d: \n", numBonds/2);
+		printf("Dirty Price: %f\n", resultsFromGpu.dirtyPrice[numBonds/2]);
+		printf("Accrued Amount: %f\n", resultsFromGpu.accruedAmountCurrDate[numBonds/2]);
+		printf("Clean Price: %f\n", resultsFromGpu.cleanPrice[numBonds/2]);
+		printf("Bond Forward Val: %f\n\n", resultsFromGpu.bondForwardVal[numBonds/2]);
+
+        cudaFree(discountCurveGpu);
+		cudaFree(repoCurveGpu);
+		cudaFree(currDateGpu);
+		cudaFree(maturityDateGpu);
+		cudaFree(bondCleanPriceGpu);
+		cudaFree(bondGpu);
+		cudaFree(dummyStrikeGpu);
+
+		cudaFree(dirtyPriceGpu);
+		cudaFree(accruedAmountCurrDateGpu);
+		cudaFree(cleanPriceGpu);
+		cudaFree(bondForwardValGpu);
+        #endif
 
 		gettimeofday(&start, NULL);
 
 		getBondsResultsCpu(inArgsHost, resultsHost, numBonds);
 
 		gettimeofday(&end, NULL);
-
 
 		seconds  = end.tv_sec  - start.tv_sec;
 		useconds = end.tv_usec - start.tv_usec;
@@ -393,8 +441,7 @@ void runRepoEngine()
 		printf("Run on CPU\n");
 		printf("Processing time on CPU: %f (ms)  \n\n", mtimeCpu);
 
-		double totPrice = 0.0;
-		int numBond1;
+		totPrice = 0.0;
 		for (numBond1= 0; numBond1< numBonds; numBond1++)
 		{
 			totPrice += resultsHost.dirtyPrice[numBond1];
@@ -405,6 +452,39 @@ void runRepoEngine()
 		printf("Accrued Amount: %f\n", resultsHost.accruedAmountCurrDate[numBonds/2]);
 		printf("Clean Price: %f\n", resultsHost.cleanPrice[numBonds/2]);
 		printf("Bond Forward Val: %f\n\n", resultsHost.bondForwardVal[numBonds/2]);
+
+        #ifdef BUILD_CUDA
+		printf("Speedup using GPU vs CPU: %f\n\n", mtimeCpu/mtimeGpu);
+        #endif
+
+        gettimeofday(&start, NULL);
+
+		getBondsResultsOpenMP(inArgsHost, resultsHost, numBonds);
+
+		gettimeofday(&end, NULL);
+
+		seconds  = end.tv_sec  - start.tv_sec;
+		useconds = end.tv_usec - start.tv_usec;
+
+		mtimeCpu = ((seconds) * 1000 + ((float)useconds)/1000.0) + 0.5f;
+        printf("Run on CPU (OpenMP: %d threads)\n", omp_get_max_threads());
+        printf("Processing time on CPU OpenMP: %f (ms)  \n\n", mtimeCpu);
+
+		totPrice = 0.0;
+		for (numBond1= 0; numBond1< numBonds; numBond1++)
+		{
+			totPrice += resultsHost.dirtyPrice[numBond1];
+		}
+		printf("Sum of output dirty prices on CPU OpenMP: %f\n", totPrice);
+		printf("Outputs on CPU OpenMP for bond with index %d: \n", numBonds/2);
+		printf("Dirty Price: %f\n", resultsHost.dirtyPrice[numBonds/2]);
+		printf("Accrued Amount: %f\n", resultsHost.accruedAmountCurrDate[numBonds/2]);
+		printf("Clean Price: %f\n", resultsHost.cleanPrice[numBonds/2]);
+		printf("Bond Forward Val: %f\n\n", resultsHost.bondForwardVal[numBonds/2]);
+
+        #ifdef BUILD_CUDA
+		printf("Speedup using GPU vs CPU OpenMP: %f\n", mtimeCpu/mtimeGpu);
+        #endif
 
 		free(resultsHost.dirtyPrice);
 		free(resultsHost.accruedAmountCurrDate);;
@@ -432,7 +512,7 @@ void runRepoEngine()
 // Program main
 ////////////////////////////////////////////////////////////////////////////////
 int
-main( int argc, char** argv) 
+main( int argc, char** argv)
 {
 	runRepoEngine();
    	return 0;
