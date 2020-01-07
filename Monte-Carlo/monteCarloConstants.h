@@ -3,8 +3,8 @@
 //May 10, 2012
 //Constants for running monte carlo on the GPU/CPU
 
-#ifndef MONTE_CARLO_CONSTANTS_CUH
-#define MONTE_CARLO_CONSTANTS_CUH
+#ifndef MONTE_CARLO_CONSTANTS_H
+#define MONTE_CARLO_CONSTANTS_H
 
 #define DEFAULT_SEQ_VAL 1.0f
 #define	DEFAULT_SEQ_WEIGHT 1.0f
@@ -32,4 +32,4 @@
 //number of threads to use for processing each option
 #define NUM_THREADS_PER_OPTION NUM_SAMPLES
 
-#endif //MONTE_CARLO_CONSTANTS_CUH
+#endif //MONTE_CARLO_CONSTANTS_h

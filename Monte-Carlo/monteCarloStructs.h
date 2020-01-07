@@ -3,8 +3,8 @@
 //May 24, 2012
 //Header file with structures used in monte carlo computation
 
-#ifndef MONTE_CARLO_STRUCTS_CUH
-#define MONTE_CARLO_STRUCTS_CUH
+#ifndef MONTE_CARLO_STRUCTS_H
+#define MONTE_CARLO_STRUCTS_H
 
 typedef float dataType;
 
@@ -19,4 +19,4 @@ typedef struct
 	dataType discountVal;
 } monteCarloOptionStruct;
 
-#endif //MONTE_CARLO_STRUCTS_CUH
+#endif //MONTE_CARLO_STRUCTS_H

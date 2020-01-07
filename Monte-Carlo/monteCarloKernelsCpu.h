@@ -3,8 +3,8 @@
 //May 10, 2012
 //Headers for monte carlo function on the CPU
 
-#ifndef MONTE_CARLO_KERNELS_CPU_CUH
-#define MONTE_CARLO_KERNELS_CPU_CUH
+#ifndef MONTE_CARLO_KERNELS_CPU_H
+#define MONTE_CARLO_KERNELS_CPU_H
 
 //needed for constants related to monte carlo
 #include "monteCarloConstants.h"
@@ -126,4 +126,4 @@ void monteCarloGpuKernelCpu(dataType * samplePrices,
                             unsigned int seed,
                             int numSamples);
 
-#endif //MONTE_CARLO_KERNELS_CPU_CUH
+#endif //MONTE_CARLO_KERNELS_CPU_H

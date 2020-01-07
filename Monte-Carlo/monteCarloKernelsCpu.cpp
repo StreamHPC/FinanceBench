@@ -169,8 +169,7 @@ void getPathCpu(dataType * path,
     for(size_t i = 1; i < SEQUENCE_LENGTH; ++i)
     {
         dataType t = i * dt;
-        float randVal = ((float)rand_r(seedp)) / ((float) RAND_MAX);
-        //dataType randVal = ((dataType)rand()) / ((dataType)RAND_MAX);
+        dataType randVal = ((dataType)rand_r(seedp)) / ((dataType) RAND_MAX);
         dataType inverseCumRandVal = compInverseNormDistCpu(randVal);
         path[i] = processEvolveCpu(
                       t, path[i - 1], dt, inverseCumRandVal, optionStruct
@@ -204,7 +203,7 @@ void monteCarloGpuKernelOpenMP(dataType * samplePrices,
 	{
 		unsigned int my_id = omp_get_thread_num();
 		unsigned int my_seed = seed + my_id;
-		#pragma omp for schedule(static, 1)
+		#pragma omp for schedule(static, 1000)
 		for(size_t numSample = 0; numSample < numSamples; ++numSample)
 		{
 			// Declare and initialize the path.
@@ -214,7 +213,7 @@ void monteCarloGpuKernelOpenMP(dataType * samplePrices,
 			const int optionStructNum = 0;
 
 			getPathCpu(path, numSample, dt, optionStructs[optionStructNum], &my_seed);
-			const dataType price = getPriceCpu(path[SEQUENCE_LENGTH-1]);
+			const dataType price = getPriceCpu(path[SEQUENCE_LENGTH - 1]);
 
 			samplePrices[numSample] = price;
 			sampleWeights[numSample] = DEFAULT_SEQ_WEIGHT;
