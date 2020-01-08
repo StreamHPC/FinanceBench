@@ -3,8 +3,8 @@
 //July 6, 2012
 //Structs for running the repo engine
 
-#ifndef REPO_STRUCTS_CUH
-#define REPO_STRUCTS_CUH
+#ifndef REPO_STRUCTS_H
+#define REPO_STRUCTS_H
 
 typedef double dataType;
 
@@ -23,7 +23,7 @@ typedef double dataType;
 #define USE_SERIAL_NUMS 1
 
 #define QL_EPSILON_GPU 0.000000000000000001f
- 
+
 #define COMPUTE_AMOUNT -1
 
 
@@ -76,7 +76,7 @@ typedef struct
 	repoDateStruct paymentDate;
 	repoDateStruct accrualStartDate;
 	repoDateStruct accrualEndDate;
-	dataType amount;	
+	dataType amount;
 } couponStruct;
 
 
@@ -149,4 +149,4 @@ typedef struct
 
 
 
-#endif //REPO_STRUCTS_CUH
+#endif //REPO_STRUCTS_H

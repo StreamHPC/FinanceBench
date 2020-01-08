@@ -22,7 +22,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 
 # Build options
 option(BUILD_CUDA "Build CUDA executables" ON)
-option(BUILD_OPENCL "Build OpenCL executables" ON)
+option(BUILD_OPENCL "Build OpenCL executables" OFF)
 
 find_package(OpenMP REQUIRED)
 
@@ -40,11 +40,7 @@ endif()
 add_subdirectory(Black-Scholes)
 add_subdirectory(Bonds)
 add_subdirectory(Monte-Carlo)
-add_subdirectory(Repo/CPU)
-
-if(BUILD_CUDA)
-    add_subdirectory(Repo/CUDA)
-endif()
+add_subdirectory(Repo)
 
 if(BUILD_OPENCL)
     find_package(OpenCL REQUIRED)

@@ -9,9 +9,9 @@
 #include <stdio.h>
 #include <sys/time.h>
 
-#include "repoStructs.cuh"
-#include "repoKernels.cu"
-#include "repoKernelsCpu.cu"
+#include "repoStructs.h"
+#include "repoKernels.cuh"
+#include "repoKernelsCpu.h"
 
 #include <time.h>
 
@@ -21,28 +21,28 @@
 #define NUM_REPOS_RUN 1000000
 
 
-int monthLengthCpu(int month, bool leapYear) 
+int monthLengthCpu(int month, bool leapYear)
 {
 	int MonthLength[] = {
 			31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 	};
-    
+
 	int MonthLeapLength[] = {
 			31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 	};
-    
+
 	return (leapYear? MonthLeapLength[month-1] : MonthLength[month-1]);
 }
 
 
-int monthOffsetCpu(int m, bool leapYear) 
+int monthOffsetCpu(int m, bool leapYear)
 {
 	int MonthOffset[] = {
 			0,  31,  59,  90, 120, 151,   // Jan - Jun
 			181, 212, 243, 273, 304, 334,   // Jun - Dec
 			365     // used in dayOfMonth to bracket day
 	};
-    
+
 	int MonthLeapOffset[] = {
 			0,  31,  60,  91, 121, 152,   // Jan - Jun
 			182, 213, 244, 274, 305, 335,   // Jun - Dec
@@ -126,7 +126,7 @@ int yearOffsetCpu(int y)
 }
 
 
-bool isLeapCpu(int y) 
+bool isLeapCpu(int y)
 {
         bool YearIsLeap[] = {
             // 1900 is leap in agreement with Excel's bug
@@ -199,7 +199,7 @@ bool isLeapCpu(int y)
 }
 
 
-repoDateStruct intializeDateCpu(int d, int m, int y) 
+repoDateStruct intializeDateCpu(int d, int m, int y)
 {
 	repoDateStruct currDate;
 
@@ -217,7 +217,7 @@ repoDateStruct intializeDateCpu(int d, int m, int y)
 
 
 
-void runRepoEngine() 
+void runRepoEngine()
 {
 	//can run multiple times with different number of bonds by uncommenting these lines
 	//int nReposArray[] = {100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000};
@@ -225,13 +225,13 @@ void runRepoEngine()
 	//for (int numTime=0; numTime < 14; numTime++)
 	{
 
-		int numRepos = NUM_REPOS_RUN;//nReposArray[numTime];	
+		int numRepos = NUM_REPOS_RUN;//nReposArray[numTime];
 		printf("\nNUM_REPOS: %d\n\n", numRepos);
 
-		
+
 
 		inArgsStruct inArgsHost;
-		
+
 		inArgsHost.discountCurve = (repoYieldTermStruct*)malloc(numRepos*sizeof(repoYieldTermStruct));
 		inArgsHost.repoCurve = (repoYieldTermStruct*)malloc(numRepos*sizeof(repoYieldTermStruct));
 		inArgsHost.settlementDate = (repoDateStruct*)malloc(numRepos*sizeof(repoDateStruct));
@@ -241,24 +241,24 @@ void runRepoEngine()
 		inArgsHost.bondCleanPrice = (dataType*)malloc(numRepos*sizeof(dataType));
 		inArgsHost.bond = (bondStruct*)malloc(numRepos*sizeof(bondStruct));
 		inArgsHost.dummyStrike = (dataType*)malloc(numRepos*sizeof(dataType));
-		
+
 		srand ( time(NULL) );
-	
-		
+
+
 		for (int numRepo = 0; numRepo < numRepos; numRepo++)
 		{
 			repoDateStruct repoSettlementDate = intializeDateCpu(rand() % 28 + 1, 3 - (rand() % 3), 2000);
     			repoDateStruct repoDeliveryDate = intializeDateCpu(rand() % 28 + 1, 9 + (rand() % 3), 2000);
     			dataType repoRate = 0.05 + ((float)rand()/(float)RAND_MAX - 0.5)*0.1;
-    
+
     			//int repoSettlementDays = 0;
     			int repoCompounding = SIMPLE_INTEREST;
     			dataType repoCompoundFreq = 1;
-    	
+
     			repoDateStruct bondIssueDate = intializeDateCpu(rand()%28 + 1, rand()%12 + 1, 1999 - (rand()%2));
     			//repoDateStruct bondDatedDate = bondIssueDate;
     			repoDateStruct bondMaturityDate = intializeDateCpu(rand()%28 + 1, rand()%12 + 1, 2001);
-    
+
     			bondStruct bond;
     			bond.startDate = bondIssueDate;
     			bond.maturityDate = bondMaturityDate;
@@ -267,7 +267,7 @@ void runRepoEngine()
 
 			//dataType bondCoupon = bond.rate;
 			dataType bondCouponFrequency = 2;
-			
+
 			//int bondSettlementDays = 0;
 
 			dataType bondCleanPrice = 89.97693786;
@@ -290,7 +290,7 @@ void runRepoEngine()
 			bondCurve.compounding = COMPOUNDED_INTEREST;
 			bondCurve.frequency = bondCouponFrequency;
 
-		
+
 			dataType dummyStrike = 91.5745;
 
 			repoYieldTermStruct repoCurve;
@@ -391,23 +391,23 @@ void runRepoEngine()
 		cudaMemcpy((inArgsGpu.bondCleanPrice), inArgsHost.bondCleanPrice, numRepos*sizeof(dataType), cudaMemcpyHostToDevice);;
 		cudaMemcpy((inArgsGpu.bond), inArgsHost.bond, numRepos*sizeof(bondStruct), cudaMemcpyHostToDevice);;
 		cudaMemcpy((inArgsGpu.dummyStrike), inArgsHost.dummyStrike, numRepos*sizeof(dataType), cudaMemcpyHostToDevice);;
-		
-		long seconds, useconds;    
+
+		long seconds, useconds;
 		float mtimeGpu;
 		float mtimeCpu;
 
 		struct timeval start;
 		gettimeofday(&start, NULL);
 
-	
-    
+
+
 
 		getRepoResultsGpu <<< gridDim, blockDim >>> (inArgsGpu, resultsGpu, numRepos);
 
 		cudaThreadSynchronize();
 		struct timeval end;
 		gettimeofday(&end, NULL);
-	
+
 		seconds  = end.tv_sec  - start.tv_sec;
 		useconds = end.tv_usec - start.tv_usec;
 
@@ -557,11 +557,10 @@ void runRepoEngine()
 // Program main
 ////////////////////////////////////////////////////////////////////////////////
 int
-main( int argc, char** argv) 
+main( int argc, char** argv)
 {
 	runRepoEngine();
 	char c;
 	c = getchar();
 	printf("%c\n", c);
 }
-
