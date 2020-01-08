@@ -404,7 +404,7 @@ void runRepoEngine()
 
 		getRepoResultsGpu <<< gridDim, blockDim >>> (inArgsGpu, resultsGpu, numRepos);
 
-		cudaThreadSynchronize();
+		cudaDeviceSynchronize();
 		struct timeval end;
 		gettimeofday(&end, NULL);
 
@@ -429,7 +429,7 @@ void runRepoEngine()
 		cudaMemcpy(resultsFromGpu.repoImpliedYield, (resultsGpu.repoImpliedYield), numRepos*sizeof(dataType), cudaMemcpyDeviceToHost);;
 		cudaMemcpy(resultsFromGpu.marketRepoRate, (resultsGpu.marketRepoRate), numRepos*sizeof(dataType), cudaMemcpyDeviceToHost);;
 		cudaMemcpy(resultsFromGpu.bondForwardVal, (resultsGpu.bondForwardVal), numRepos*sizeof(dataType), cudaMemcpyDeviceToHost);;
-		cudaThreadSynchronize();
+		cudaDeviceSynchronize();
 
 
 		double totPrice = 0.0;
@@ -560,7 +560,5 @@ int
 main( int argc, char** argv)
 {
 	runRepoEngine();
-	char c;
-	c = getchar();
-	printf("%c\n", c);
+    return 0;
 }
