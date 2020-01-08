@@ -10,62 +10,8 @@
 #include <omp.h>
 
 //needed for the structs used on the code
-#include "blackScholesAnalyticEngineStructs.h"
-
-//needed for the constants in the error function
-#include "errorFunctConsts.h"
-
-//device kernel to retrieve the compound factor in interestRate
-float interestRateCompoundFactorCpu(float t,
-                                    yieldTermStruct currYieldTermStruct);
-
-//device kernel to retrieve the discount factor in interestRate
-float interestRateDiscountFactorCpu(float t,
-                                    yieldTermStruct currYieldTermStruct);
-
-//device function to get the variance of the black volatility function
-float getBlackVolBlackVarCpu(blackVolStruct volTS);
-
-//device function to get the discount on a dividend yield
-float getDiscountOnDividendYieldCpu(float yearFraction,
-                                    yieldTermStruct dividendYieldTermStruct);
-
-//device function to get the discount on the risk free rate
-float getDiscountOnRiskFreeRateCpu(float yearFraction,
-                                   yieldTermStruct riskFreeRateYieldTermStruct);
-
-//device kernel to run the error function
-float errorFunctCpu(normalDistStruct normDist,
-                    float x);
-
-//device kernel to run the operator function in cumulative normal distribution
-float cumNormDistOpCpu(normalDistStruct normDist,
-                       float z);
-
-//device kernel to run the gaussian function in the normal distribution
-float gaussianFunctNormDistCpu(normalDistStruct normDist,
-                               float x);
-
-//device kernel to retrieve the derivative in a cumulative normal distribution
-float cumNormDistDerivCpu(normalDistStruct normDist,
-                          float x);
-
-//device function to initialize the cumulative normal distribution structure
-void initCumNormDistCpu(normalDistStruct& currCumNormDist);
-
-//device function to initialize variable in the black calculator
-void initBlackCalcVarsCpu(blackCalcStruct& blackCalculator,
-                          payoffStruct payoff);
-
-//device function to initialize the black calculator
-void initBlackCalculatorCpu(blackCalcStruct& blackCalc,
-                            payoffStruct payoff,
-                            float forwardPrice,
-                            float stdDev,
-                            float riskFreeDiscount);
-
-//device function to retrieve the output resulting value
-float getResultValCpu(blackCalcStruct blackCalculator);
+//#include "blackScholesAnalyticEngineStructs.h"
+#include "blackScholesAnalyticEngineFuncs.h"
 
 //global function to retrieve the output value for an option
 void getOutValOptionCpu(optionInputStruct * options,

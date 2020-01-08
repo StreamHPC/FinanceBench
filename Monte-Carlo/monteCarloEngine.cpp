@@ -80,7 +80,7 @@ void cudaV1(dataType * samplePrices,
         cudaDeviceSynchronize();
 
         // setup execution parameters
-        monteCarloGpuKernel<<<grid, threads>>>(samplePricesGpu, sampleWeightsGpu, timesGpu, (1.0f / (dataType)SEQUENCE_LENGTH), devStates, optionStructsGpu, numSamples);
+        monteCarloGpuKernel<<<grid, threads>>>(samplePricesGpu, sampleWeightsGpu, timesGpu, (1.0f / (dataType)SEQUENCE_LENGTH), devStates, optionStructsGpu, seed, numSamples);
         cudaDeviceSynchronize();
 
         gettimeofday(&end, NULL);
