@@ -403,7 +403,6 @@ int main(int argc, char *argv[])
     cudaDeviceProp props;
     CUDA_CALL(cudaGetDeviceProperties(&props, device_id));
 
-    //std::cout << "cuRAND: " << version << " ";
     std::cout << "Runtime: " << runtime_version << " ";
     std::cout << "Device: " << props.name;
     std::cout << std::endl << std::endl;
@@ -431,7 +430,7 @@ int main(int argc, char *argv[])
     for(auto& b : benchmarks)
     {
         b->UseManualTime();
-        b->Unit(benchmark::kMillisecond);
+        b->Unit(benchmark::kMicrosecond);
     }
 
     // Force number of iterations
