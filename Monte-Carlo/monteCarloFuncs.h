@@ -169,7 +169,7 @@ HOST_DEVICE dataType processEvolve(dataType t0,
 HOST_DEVICE void getSequence(dataType * sequence,
                              dataType sampleNum)
 {
-    for(size_t iInSeq = 0; iInSeq < SEQUENCE_LENGTH; ++iInSeq)
+    for(unsigned int iInSeq = 0; iInSeq < SEQUENCE_LENGTH; ++iInSeq)
     {
         sequence[iInSeq] = DEFAULT_SEQ_VAL;
     }
@@ -188,7 +188,7 @@ HOST_DEVICE dataType getPrice(dataType val)
 //initialize the path
 HOST_DEVICE void initializePath(dataType * path)
 {
-    for(int i = 0; i < SEQUENCE_LENGTH; ++i)
+    for(unsigned int i = 0; i < SEQUENCE_LENGTH; ++i)
     {
         path[i] = START_PATH_VAL;
     }

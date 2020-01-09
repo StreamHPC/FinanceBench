@@ -242,8 +242,8 @@ void runRepoEngine()
 		inArgsHost.bond = (bondStruct*)malloc(numRepos*sizeof(bondStruct));
 		inArgsHost.dummyStrike = (dataType*)malloc(numRepos*sizeof(dataType));
 
-		srand ( time(NULL) );
-
+        unsigned int seed = 123;
+		srand(seed);
 
 		for (int numRepo = 0; numRepo < numRepos; numRepo++)
 		{
@@ -273,9 +273,6 @@ void runRepoEngine()
 			dataType bondCleanPrice = 89.97693786;
 			//dataType bondRedemption = 100.0;
 			//dataType faceAmount = 100.0;
-
-
-
 
 			repoYieldTermStruct bondCurve;
 
@@ -377,10 +374,8 @@ void runRepoEngine()
 		cudaMalloc(&(inArgsGpu.bond), numRepos*sizeof(bondStruct));;
 		cudaMalloc(&(inArgsGpu.dummyStrike), numRepos*sizeof(dataType));;
 
-
 		dim3 blockDim(128, 1);
 		dim3 gridDim((size_t)ceil((dataType)numRepos / (dataType)blockDim.x), 1);
-
 
 		cudaMemcpy((inArgsGpu.discountCurve), inArgsHost.discountCurve, numRepos*sizeof(repoYieldTermStruct), cudaMemcpyHostToDevice);;
 		cudaMemcpy((inArgsGpu.repoCurve), inArgsHost.repoCurve, numRepos*sizeof(repoYieldTermStruct), cudaMemcpyHostToDevice);;
@@ -398,9 +393,6 @@ void runRepoEngine()
 
 		struct timeval start;
 		gettimeofday(&start, NULL);
-
-
-
 
 		getRepoResultsGpu <<< gridDim, blockDim >>> (inArgsGpu, resultsGpu, numRepos);
 
@@ -452,9 +444,8 @@ void runRepoEngine()
 		printf("Market Repo Rate: %f\n", resultsFromGpu.marketRepoRate[numRepos/2]);
 		printf("Bond Forward Val: %f\n\n", resultsFromGpu.bondForwardVal[numRepos/2]);
 
-
 		gettimeofday(&start, NULL);
-		getRepoResultsGpuCpu(inArgsHost, resultsHost, numRepos);
+		getRepoResultsCpu(inArgsHost, resultsHost, numRepos);
 		gettimeofday(&end, NULL);
 
 		totPrice = 0.0;
@@ -486,9 +477,42 @@ void runRepoEngine()
 		printf("Market Repo Rate: %f\n", resultsHost.marketRepoRate[numRepos/2]);
 		printf("Bond Forward Val: %f\n\n", resultsHost.bondForwardVal[numRepos/2]);
 
-		printf("Speedup using GPU: %f\n", mtimeCpu/mtimeGpu);
+		printf("Speedup using GPU vs CPU: %f\n\n", mtimeCpu / mtimeGpu);
 
+        gettimeofday(&start, NULL);
+		getRepoResultsOpenMP(inArgsHost, resultsHost, numRepos);
+		gettimeofday(&end, NULL);
 
+		totPrice = 0.0;
+		for (int numRepo = 0; numRepo < numRepos; numRepo++)
+		{
+			totPrice += resultsHost.dirtyPrice[numRepo];
+		}
+
+		seconds  = end.tv_sec  - start.tv_sec;
+		useconds = end.tv_usec - start.tv_usec;
+
+		mtimeCpu = ((seconds) * 1000 + ((float)useconds)/1000.0) + 0.5f;
+
+        printf("Run on CPU (OpenMP: %d threads)\n", omp_get_max_threads());
+        printf("Processing time on CPU OpenMP: %f (ms)  \n\n", mtimeCpu);
+
+		printf("Sum of repo dirty price on CPU (OpenMP): %f\n\n", totPrice);
+		printf("Computed info on CPU (OpenMP) for Repo at index %d\n", numRepos/2);
+		printf("Dirty Price: %f\n", resultsHost.dirtyPrice[numRepos/2]);
+		printf("Accrued Amount: %f\n", resultsHost.accruedAmountSettlement[numRepos/2]);
+		printf("Accrued Amount at delivery: %f\n", resultsHost.accruedAmountDeliveryDate[numRepos/2]);
+		printf("Clean Price: %f\n", resultsHost.cleanPrice[numRepos/2]);
+		printf("Forward Spot Income: %f\n", resultsHost.forwardSpotIncome[numRepos/2]);
+		printf("Underlying Forward Income: %f\n", resultsHost.underlyingBondFwd[numRepos/2]);
+		printf("Repo NPV: %f\n", resultsHost.repoNpv[numRepos/2]);
+		printf("Repo Clean Forward Price: %f\n", resultsHost.repoCleanForwardPrice[numRepos/2]);
+		printf("Repo Dirty Forward Price: %f\n", resultsHost.repoDirtyForwardPrice[numRepos/2]);
+		printf("Repo Implied Yield: %f\n", resultsHost.repoImpliedYield[numRepos/2]);
+		printf("Market Repo Rate: %f\n", resultsHost.marketRepoRate[numRepos/2]);
+		printf("Bond Forward Val: %f\n\n", resultsHost.bondForwardVal[numRepos/2]);
+
+		printf("Speedup using GPU vs CPU OpenMP: %f\n", mtimeCpu / mtimeGpu);
 
 		cudaFree(resultsGpu.dirtyPrice);
 		cudaFree(resultsGpu.accruedAmountSettlement);;

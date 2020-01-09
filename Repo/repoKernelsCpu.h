@@ -7,8 +7,13 @@
 #define REPO_KERNELS_CPU_H
 
 #include "repoFuncs.h"
+#include <omp.h>
 
-void getRepoResultsGpuCpu(inArgsStruct inArgs,
+void getRepoResultsCpu(inArgsStruct inArgs,
+                       resultsStruct results,
+                       int totNumRuns);
+
+void getRepoResultsOpenMP(inArgsStruct inArgs,
                           resultsStruct results,
                           int totNumRuns);
 
