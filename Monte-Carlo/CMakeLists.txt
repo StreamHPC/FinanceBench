@@ -13,3 +13,16 @@ if(BUILD_CUDA)
     set_property(TARGET monteCarlo PROPERTY CUDA_STANDARD 11)
     set_property(TARGET monteCarloCuda PROPERTY CUDA_STANDARD 11)
 endif()
+
+if(BUILD_BENCHMARK)
+    add_executable(benchmarkMonteCarlo benchmarkMonteCarlo.cpp)
+    target_link_libraries(benchmarkMonteCarlo monteCarloCpu monteCarloCuda benchmark::benchmark)
+    set_target_properties(benchmarkMonteCarlo
+      PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+    )
+    target_include_directories(benchmarkMonteCarlo PUBLIC
+      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
+    set_property(TARGET benchmarkMonteCarlo PROPERTY CUDA_STANDARD 11)
+    set_source_files_properties(benchmarkMonteCarlo.cpp PROPERTIES LANGUAGE CUDA)
+endif()

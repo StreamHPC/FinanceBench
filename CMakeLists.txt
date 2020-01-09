@@ -23,6 +23,11 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 # Build options
 option(BUILD_CUDA "Build CUDA executables" ON)
 option(BUILD_OPENCL "Build OpenCL executables" OFF)
+option(BUILD_TEST "Build tests (requires googletest)" OFF)
+option(BUILD_BENCHMARK "Build benchmarks" ON)
+
+# Get dependencies
+include(cmake/Dependencies.cmake)
 
 find_package(OpenMP REQUIRED)
 

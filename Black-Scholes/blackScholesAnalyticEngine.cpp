@@ -22,7 +22,7 @@
 void runBlackScholesAnalyticEngine()
 {
     //int nSamplesArray[] = {100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000, 2000000, 5000000};
-    int numberOfSamples = 5000000;
+    int numberOfSamples = 1024 * 1024 * 5;
     //for (int numTime=14; numTime < 15; numTime++)
     {
         int numVals = numberOfSamples;//nSamplesArray[numTime];

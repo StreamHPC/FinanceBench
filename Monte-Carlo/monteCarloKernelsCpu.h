@@ -24,20 +24,20 @@ void getPathCpu(dataType * path,
                 monteCarloOptionStruct optionStruct,
                 unsigned int * seedp);
 
-void monteCarloGpuKernelOpenMP(dataType * samplePrices,
-                               dataType * sampleWeights,
-                               dataType * times,
-                               dataType dt,
-                               monteCarloOptionStruct * optionStructs,
-                               unsigned int seed,
-                               int numSamples);
-
-void monteCarloGpuKernelCpu(dataType * samplePrices,
+void monteCarloKernelOpenMP(dataType * samplePrices,
                             dataType * sampleWeights,
-                            dataType* times,
+                            dataType * times,
                             dataType dt,
                             monteCarloOptionStruct * optionStructs,
                             unsigned int seed,
                             int numSamples);
+
+void monteCarloKernelCpu(dataType * samplePrices,
+                         dataType * sampleWeights,
+                         dataType* times,
+                         dataType dt,
+                         monteCarloOptionStruct * optionStructs,
+                         unsigned int seed,
+                         int numSamples);
 
 #endif //MONTE_CARLO_KERNELS_CPU_H

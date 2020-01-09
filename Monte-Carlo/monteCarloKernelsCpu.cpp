@@ -30,13 +30,13 @@ void getPathCpu(dataType * path,
     }
 }
 
-void monteCarloGpuKernelOpenMP(dataType * samplePrices,
-                               dataType * sampleWeights,
-                               dataType * times,
-                               dataType dt,
-                               monteCarloOptionStruct * optionStructs,
-                               unsigned int seed,
-                               int numSamples)
+void monteCarloKernelOpenMP(dataType * samplePrices,
+                            dataType * sampleWeights,
+                            dataType * times,
+                            dataType dt,
+                            monteCarloOptionStruct * optionStructs,
+                            unsigned int seed,
+                            int numSamples)
 {
     #pragma omp parallel
 	{
@@ -60,13 +60,13 @@ void monteCarloGpuKernelOpenMP(dataType * samplePrices,
 	}
 }
 
-void monteCarloGpuKernelCpu(dataType * samplePrices,
-                            dataType * sampleWeights,
-                            dataType * times,
-                            dataType dt,
-                            monteCarloOptionStruct * optionStructs,
-                            unsigned int seed,
-                            int numSamples)
+void monteCarloKernelCpu(dataType * samplePrices,
+                         dataType * sampleWeights,
+                         dataType * times,
+                         dataType dt,
+                         monteCarloOptionStruct * optionStructs,
+                         unsigned int seed,
+                         int numSamples)
 {
     for(size_t numSample = 0; numSample < numSamples; ++numSample)
     {

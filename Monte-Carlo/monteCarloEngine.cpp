@@ -206,7 +206,7 @@ void runMonteCarlo()
     //int nSamplesArray[] = {100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000};//,                     1000000, 2000000};//, 5000000};//, 10000000, 20000000};
     unsigned int seed = 123;
     srand(seed);
-    int numSamples = 400000;
+    int numSamples = 1024 * 512;
 
     //for (int numTime=0; numTime < 12; numTime++)
     {
@@ -277,7 +277,7 @@ void runMonteCarlo()
 
         gettimeofday(&start, NULL);
 
-        monteCarloGpuKernelCpu(samplePricesCpu, sampleWeightsCpu, timesCpu, (1.0f / (dataType)SEQUENCE_LENGTH), optionStructs, seed, numSamples);
+        monteCarloKernelCpu(samplePricesCpu, sampleWeightsCpu, timesCpu, (1.0f / (dataType)SEQUENCE_LENGTH), optionStructs, seed, numSamples);
 
         gettimeofday(&end, NULL);
 
@@ -314,7 +314,7 @@ void runMonteCarlo()
 
         gettimeofday(&start, NULL);
 
-        monteCarloGpuKernelOpenMP(samplePricesCpu, sampleWeightsCpu, timesCpu, (1.0f / (dataType)SEQUENCE_LENGTH), optionStructs, seed, numSamples);
+        monteCarloKernelOpenMP(samplePricesCpu, sampleWeightsCpu, timesCpu, (1.0f / (dataType)SEQUENCE_LENGTH), optionStructs, seed, numSamples);
 
         gettimeofday(&end, NULL);
 
