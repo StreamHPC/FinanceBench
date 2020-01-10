@@ -15,7 +15,7 @@
         #define DEVICE
     #endif
 #else
-    #define HOST_DEVICE
+    #define HOST_DEVICE inline
     #define DEVICE
 #endif
 

@@ -12,13 +12,14 @@
 #include "cmdparser.hpp"
 
 #include "monteCarloKernelsCpu.h"
+#ifdef BUILD_CUDA
 #include "monteCarloKernels.cuh"
-
 #include <cuda_runtime.h>
 
 #define CUDA_CALL(x) do { if((x)!=cudaSuccess) { \
     printf("Error at %s:%d\n",__FILE__,__LINE__);\
     exit(EXIT_FAILURE);}} while(0)
+#endif
 
 #ifndef DEFAULT_N
 const size_t DEFAULT_N = 1024 * 512;
@@ -146,6 +147,7 @@ void runBenchmarkOpenMP(benchmark::State& state,
     free(optionStructs);
 }
 
+#ifdef BUILD_CUDA
 void runBenchmarkCudaV1(benchmark::State& state,
                         int seed,
                         size_t size)
@@ -175,9 +177,6 @@ void runBenchmarkCudaV1(benchmark::State& state,
     CUDA_CALL(cudaMalloc(&timesGpu, NUM_OPTIONS * size * sizeof(dataType)));
     CUDA_CALL(cudaMalloc(&optionStructsGpu, NUM_OPTIONS * sizeof(monteCarloOptionStruct)));
 
-    CUDA_CALL(cudaMemcpy(samplePricesGpu, samplePrices, NUM_OPTIONS * size * sizeof(dataType), cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMemcpy(sampleWeightsGpu, sampleWeights, NUM_OPTIONS * size * sizeof(dataType), cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMemcpy(timesGpu, times, NUM_OPTIONS * size * sizeof(dataType), cudaMemcpyHostToDevice));
     CUDA_CALL(cudaMemcpy(optionStructsGpu, optionStructs, NUM_OPTIONS * sizeof(monteCarloOptionStruct), cudaMemcpyHostToDevice));
     CUDA_CALL(cudaDeviceSynchronize());
 
@@ -218,6 +217,7 @@ void runBenchmarkCudaV1(benchmark::State& state,
         state.SetIterationTime(elapsed_seconds.count());
     }
 
+    CUDA_CALL(cudaFree(devStates));
     CUDA_CALL(cudaFree(samplePricesGpu));
     CUDA_CALL(cudaFree(sampleWeightsGpu));
     CUDA_CALL(cudaFree(timesGpu));
@@ -278,9 +278,6 @@ void runBenchmarkCudaV2(benchmark::State& state,
     {
         auto start = std::chrono::high_resolution_clock::now();
 
-        CUDA_CALL(cudaMemcpy(samplePricesGpu, samplePrices, NUM_OPTIONS * size * sizeof(dataType), cudaMemcpyHostToDevice));
-        CUDA_CALL(cudaMemcpy(sampleWeightsGpu, sampleWeights, NUM_OPTIONS * size * sizeof(dataType), cudaMemcpyHostToDevice));
-        CUDA_CALL(cudaMemcpy(timesGpu, times, NUM_OPTIONS * size * sizeof(dataType), cudaMemcpyHostToDevice));
         CUDA_CALL(cudaMemcpy(optionStructsGpu, optionStructs, NUM_OPTIONS * sizeof(monteCarloOptionStruct), cudaMemcpyHostToDevice));
 
         setup_kernel<<<grid, threads>>>(devStates, seed, size);
@@ -303,6 +300,7 @@ void runBenchmarkCudaV2(benchmark::State& state,
         state.SetIterationTime(elapsed_seconds.count());
     }
 
+    CUDA_CALL(cudaFree(devStates));
     CUDA_CALL(cudaFree(samplePricesGpu));
     CUDA_CALL(cudaFree(sampleWeightsGpu));
     CUDA_CALL(cudaFree(timesGpu));
@@ -343,9 +341,6 @@ void runBenchmarkCudaV3(benchmark::State& state,
     CUDA_CALL(cudaMalloc(&timesGpu, NUM_OPTIONS * size * sizeof(dataType)));
     CUDA_CALL(cudaMalloc(&optionStructsGpu, NUM_OPTIONS * sizeof(monteCarloOptionStruct)));
 
-    CUDA_CALL(cudaMemcpy(samplePricesGpu, samplePrices, NUM_OPTIONS * size * sizeof(dataType), cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMemcpy(sampleWeightsGpu, sampleWeights, NUM_OPTIONS * size * sizeof(dataType), cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMemcpy(timesGpu, times, NUM_OPTIONS * size * sizeof(dataType), cudaMemcpyHostToDevice));
     CUDA_CALL(cudaMemcpy(optionStructsGpu, optionStructs, NUM_OPTIONS * sizeof(monteCarloOptionStruct), cudaMemcpyHostToDevice));
     CUDA_CALL(cudaDeviceSynchronize());
 
@@ -382,6 +377,7 @@ void runBenchmarkCudaV3(benchmark::State& state,
         state.SetIterationTime(elapsed_seconds.count());
     }
 
+    CUDA_CALL(cudaFree(devStates));
     CUDA_CALL(cudaFree(samplePricesGpu));
     CUDA_CALL(cudaFree(sampleWeightsGpu));
     CUDA_CALL(cudaFree(timesGpu));
@@ -441,9 +437,6 @@ void runBenchmarkCudaV4(benchmark::State& state,
     {
         auto start = std::chrono::high_resolution_clock::now();
 
-        CUDA_CALL(cudaMemcpy(samplePricesGpu, samplePrices, NUM_OPTIONS * size * sizeof(dataType), cudaMemcpyHostToDevice));
-        CUDA_CALL(cudaMemcpy(sampleWeightsGpu, sampleWeights, NUM_OPTIONS * size * sizeof(dataType), cudaMemcpyHostToDevice));
-        CUDA_CALL(cudaMemcpy(timesGpu, times, NUM_OPTIONS * size * sizeof(dataType), cudaMemcpyHostToDevice));
         CUDA_CALL(cudaMemcpy(optionStructsGpu, optionStructs, NUM_OPTIONS * sizeof(monteCarloOptionStruct), cudaMemcpyHostToDevice));
 
         monteCarloGpuKernel<<<grid, threads>>>(
@@ -464,6 +457,7 @@ void runBenchmarkCudaV4(benchmark::State& state,
         state.SetIterationTime(elapsed_seconds.count());
     }
 
+    CUDA_CALL(cudaFree(devStates));
     CUDA_CALL(cudaFree(samplePricesGpu));
     CUDA_CALL(cudaFree(sampleWeightsGpu));
     CUDA_CALL(cudaFree(timesGpu));
@@ -474,6 +468,7 @@ void runBenchmarkCudaV4(benchmark::State& state,
     free(times);
     free(optionStructs);
 }
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -491,6 +486,7 @@ int main(int argc, char *argv[])
     const int seed = parser.get<int>("seed");
     srand(seed);
 
+    #ifdef BUILD_CUDA
     int runtime_version;
     CUDA_CALL(cudaRuntimeGetVersion(&runtime_version));
     int device_id;
@@ -501,6 +497,7 @@ int main(int argc, char *argv[])
     std::cout << "Runtime: " << runtime_version << " ";
     std::cout << "Device: " << props.name;
     std::cout << std::endl << std::endl;
+    #endif
 
     std::vector<benchmark::internal::Benchmark*> benchmarks =
     {
@@ -512,6 +509,7 @@ int main(int argc, char *argv[])
             ("monteCarlo (OpenMP)"),
             [=](benchmark::State& state) { runBenchmarkOpenMP(state, seed, size); }
         ),
+        #ifdef BUILD_CUDA
         benchmark::RegisterBenchmark(
             ("monteCarloCuda (Compute Only)"),
             [=](benchmark::State& state) { runBenchmarkCudaV1(state, seed, size); }
@@ -528,6 +526,7 @@ int main(int argc, char *argv[])
             ("monteCarloCudaOpt (+ Transfers)"),
             [=](benchmark::State& state) { runBenchmarkCudaV4(state, seed, size); }
         ),
+        #endif
     };
 
     for(auto& b : benchmarks)

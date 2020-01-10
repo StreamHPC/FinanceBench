@@ -6,7 +6,7 @@
 #ifndef ERROR_FUNCT_CONSTS_CUH
 #define ERROR_FUNCT_CONSTS_CUH
 
-#define DBL_MIN (1E-37)
+#define DBL_MIN_ (1E-37)
 
 #ifndef M_1_PI
     #define M_1_PI      0.318309886183790671538

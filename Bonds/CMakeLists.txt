@@ -1,26 +1,48 @@
 add_library(bondsCpu bondsKernelsCpu.cpp)
-add_executable(bonds bondsEngine.cpp)
-target_link_libraries(bonds bondsCpu)
-set_target_properties(bonds
-  PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-)
-
-if(BUILD_CUDA)
-    add_library(bondsCuda bondsKernelsGpu.cu)
-    target_link_libraries(bonds bondsCuda)
-    set_source_files_properties(bondsEngine.cpp PROPERTIES LANGUAGE CUDA)
-endif()
+#add_executable(bonds bondsEngine.cpp)
+#target_link_libraries(bonds bondsCpu)
+#set_target_properties(bonds
+#  PROPERTIES
+#    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+#)
 
 if(BUILD_BENCHMARK)
     add_executable(benchmarkBonds benchmarkBonds.cpp)
-    target_link_libraries(benchmarkBonds bondsCpu bondsCuda benchmark::benchmark)
+    target_link_libraries(benchmarkBonds bondsCpu benchmark::benchmark)
     set_target_properties(benchmarkBonds
       PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
     )
     target_include_directories(benchmarkBonds PUBLIC
       $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
-    set_property(TARGET benchmarkBonds PROPERTY CUDA_STANDARD 11)
-    set_source_files_properties(benchmarkBonds.cpp PROPERTIES LANGUAGE CUDA)
+endif()
+
+if(BUILD_TEST)
+    add_executable(testBonds testBonds.cpp)
+    target_link_libraries(testBonds bondsCpu ${GTEST_BOTH_LIBRARIES})
+    target_include_directories(testBonds SYSTEM BEFORE
+    PUBLIC
+      ${GTEST_INCLUDE_DIRS}
+  )
+    set_target_properties(testBonds
+      PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+    )
+    add_test(NAME testBonds COMMAND testBonds)
+endif()
+
+if(BUILD_CUDA)
+    add_library(bondsCuda bondsKernelsGpu.cu)
+    #target_link_libraries(bonds bondsCuda)
+    #set_source_files_properties(bondsEngine.cpp PROPERTIES LANGUAGE CUDA)
+    if(BUILD_BENCHMARK)
+        target_link_libraries(benchmarkBonds bondsCuda)
+        set_property(TARGET benchmarkBonds PROPERTY CUDA_STANDARD 11)
+        set_source_files_properties(benchmarkBonds.cpp PROPERTIES LANGUAGE CUDA)
+    endif()
+    if(BUILD_TEST)
+        target_link_libraries(testBonds bondsCuda)
+        set_property(TARGET testBonds PROPERTY CUDA_STANDARD 11)
+        set_source_files_properties(testBonds.cpp PROPERTIES LANGUAGE CUDA)
+    endif()
 endif()

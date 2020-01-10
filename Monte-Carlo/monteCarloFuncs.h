@@ -13,7 +13,7 @@
 #ifdef __NVCC__
     #define HOST_DEVICE __host__ __device__ inline
 #else
-    #define HOST_DEVICE
+    #define HOST_DEVICE inline
 #endif
 
 #define max(a,b) \

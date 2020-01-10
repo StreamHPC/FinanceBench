@@ -12,13 +12,14 @@
 #include "cmdparser.hpp"
 
 #include "blackScholesAnalyticEngineKernelsCpu.h"
+#ifdef BUILD_CUDA
 #include "blackScholesAnalyticEngineKernels.cuh"
-
 #include <cuda_runtime.h>
 
 #define CUDA_CALL(x) do { if((x)!=cudaSuccess) { \
     printf("Error at %s:%d\n",__FILE__,__LINE__);\
     exit(EXIT_FAILURE);}} while(0)
+#endif
 
 #ifndef DEFAULT_N
 const size_t DEFAULT_N = 1024 * 1024 * 5;
@@ -285,6 +286,7 @@ void runBenchmarkOpenMP(benchmark::State& state,
     free(outputVals);
 }
 
+#ifdef BUILD_CUDA
 void runBenchmarkCudaV1(benchmark::State& state,
                         size_t size)
 {
@@ -480,6 +482,7 @@ void runBenchmarkCudaV4(benchmark::State& state,
     delete [] values;
     free(outputVals);
 }
+#endif
 
 int main(int argc, char *argv[])
 {
@@ -494,6 +497,7 @@ int main(int argc, char *argv[])
     const size_t size = parser.get<size_t>("size");
     const int trials = parser.get<int>("trials");
 
+    #ifdef BUILD_CUDA
     int runtime_version;
     CUDA_CALL(cudaRuntimeGetVersion(&runtime_version));
     int device_id;
@@ -504,6 +508,7 @@ int main(int argc, char *argv[])
     std::cout << "Runtime: " << runtime_version << " ";
     std::cout << "Device: " << props.name;
     std::cout << std::endl << std::endl;
+    #endif
 
     std::vector<benchmark::internal::Benchmark*> benchmarks =
     {
@@ -515,6 +520,7 @@ int main(int argc, char *argv[])
             ("blackScholes (OpenMP)"),
             [=](benchmark::State& state) { runBenchmarkOpenMP(state, size); }
         ),
+        #ifdef BUILD_CUDA
         benchmark::RegisterBenchmark(
             ("blackScholesCuda (Compute Only)"),
             [=](benchmark::State& state) { runBenchmarkCudaV1(state, size); }
@@ -531,6 +537,7 @@ int main(int argc, char *argv[])
             ("blackScholesCudaOpt (+ Transfers)"),
             [=](benchmark::State& state) { runBenchmarkCudaV4(state, size); }
         ),
+        #endif
     };
 
     for(auto& b : benchmarks)

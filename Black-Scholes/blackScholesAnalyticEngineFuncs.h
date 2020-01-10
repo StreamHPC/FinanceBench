@@ -17,7 +17,7 @@
 #ifdef __NVCC__
     #define HOST_DEVICE __host__ __device__ inline
 #else
-    #define HOST_DEVICE
+    #define HOST_DEVICE inline
 #endif
 
 //device kernel to retrieve the compound factor in interestRate
@@ -68,7 +68,7 @@ HOST_DEVICE float errorFunct(normalDistStruct normDist,
     {
         if(ax < 3.7252902984e-09)
         {
-            if(ax < DBL_MIN*16)
+            if(ax < DBL_MIN_ * 16)
                 return 0.125 * (8.0 * x+ (ERROR_FUNCT_efx8) * x);  /*avoid underflow */
             return x + (ERROR_FUNCT_efx) * x;
         }

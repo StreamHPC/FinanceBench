@@ -23,7 +23,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 # Build options
 option(BUILD_CUDA "Build CUDA executables" ON)
 option(BUILD_OPENCL "Build OpenCL executables" OFF)
-option(BUILD_TEST "Build tests (requires googletest)" OFF)
+option(BUILD_TEST "Build tests (requires googletest)" ON)
 option(BUILD_BENCHMARK "Build benchmarks" ON)
 
 # Get dependencies
@@ -40,6 +40,10 @@ endif()
 if(BUILD_CUDA)
     enable_language("CUDA")
     add_definitions(-DBUILD_CUDA)
+endif()
+
+if(BUILD_TEST)
+    enable_testing()
 endif()
 
 add_subdirectory(Black-Scholes)
