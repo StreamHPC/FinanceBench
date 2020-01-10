@@ -25,4 +25,8 @@ __global__ void getOutValOption(optionInputStruct * options,
                                 float * outputVals,
                                 int numVals);
 
+__global__ void getOutValOptionOpt(optionInputStruct * options,
+                                   float * outputVals,
+                                   int numVals);
+
 #endif //BLACK_SCHOLES_ANALYTIC_ENGINE_KERNELS_CUH

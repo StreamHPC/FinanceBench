@@ -383,6 +383,104 @@ void runBenchmarkCudaV2(benchmark::State& state,
     free(outputVals);
 }
 
+void runBenchmarkCudaV3(benchmark::State& state,
+                        size_t size)
+{
+    int numVals = size;
+    optionInputStruct * values = new optionInputStruct[size];
+
+    initOptions(values, size);
+
+    float * outputVals = (float *)malloc(numVals * sizeof(float));
+    optionInputStruct * optionsGpu;
+    float * outputValsGpu;
+
+    CUDA_CALL(cudaMalloc(&optionsGpu, numVals * sizeof(optionInputStruct)));
+    CUDA_CALL(cudaMalloc(&outputValsGpu, numVals * sizeof(float)));
+
+    CUDA_CALL(cudaMemcpy(optionsGpu, values, numVals * sizeof(optionInputStruct), cudaMemcpyHostToDevice));
+    CUDA_CALL(cudaDeviceSynchronize());
+
+    dim3 grid((size_t)ceil((float)numVals / (float)THREAD_BLOCK_SIZE), 1, 1);
+    dim3 threads( THREAD_BLOCK_SIZE, 1, 1);
+
+    // Warm-up
+    for(size_t i = 0; i < warmup_size; i++)
+    {
+        getOutValOptionOpt<<<grid, threads>>>(optionsGpu, outputValsGpu, numVals);
+        CUDA_CALL(cudaPeekAtLastError());
+        CUDA_CALL(cudaDeviceSynchronize());
+    }
+
+    for(auto _ : state)
+    {
+        auto start = std::chrono::high_resolution_clock::now();
+
+        getOutValOptionOpt<<<grid, threads>>>(optionsGpu, outputValsGpu, numVals);
+        CUDA_CALL(cudaPeekAtLastError());
+        CUDA_CALL(cudaDeviceSynchronize());
+
+        auto end = std::chrono::high_resolution_clock::now();
+        auto elapsed_seconds =
+            std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+        state.SetIterationTime(elapsed_seconds.count());
+    }
+
+    CUDA_CALL(cudaFree(optionsGpu));
+    CUDA_CALL(cudaFree(outputValsGpu));
+
+    delete [] values;
+    free(outputVals);
+}
+
+void runBenchmarkCudaV4(benchmark::State& state,
+                        size_t size)
+{
+    int numVals = size;
+    optionInputStruct * values = new optionInputStruct[size];
+
+    initOptions(values, size);
+
+    float * outputVals = (float *)malloc(numVals * sizeof(float));
+    optionInputStruct * optionsGpu;
+    float * outputValsGpu;
+
+    CUDA_CALL(cudaMalloc(&optionsGpu, numVals * sizeof(optionInputStruct)));
+    CUDA_CALL(cudaMalloc(&outputValsGpu, numVals * sizeof(float)));
+
+    dim3 grid((size_t)ceil((float)numVals / (float)THREAD_BLOCK_SIZE), 1, 1);
+    dim3 threads( THREAD_BLOCK_SIZE, 1, 1);
+
+    // Warm-up
+    for(size_t i = 0; i < warmup_size; i++)
+    {
+        getOutValOptionOpt<<<grid, threads>>>(optionsGpu, outputValsGpu, numVals);
+        CUDA_CALL(cudaDeviceSynchronize());
+    }
+
+    for(auto _ : state)
+    {
+        auto start = std::chrono::high_resolution_clock::now();
+
+        CUDA_CALL(cudaMemcpy(optionsGpu, values, numVals * sizeof(optionInputStruct), cudaMemcpyHostToDevice));
+        getOutValOptionOpt<<<grid, threads>>>(optionsGpu, outputValsGpu, numVals);
+        CUDA_CALL(cudaPeekAtLastError());
+        CUDA_CALL(cudaMemcpy(outputVals, outputValsGpu, numVals * sizeof(float), cudaMemcpyDeviceToHost));
+        CUDA_CALL(cudaDeviceSynchronize());
+
+        auto end = std::chrono::high_resolution_clock::now();
+        auto elapsed_seconds =
+            std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+        state.SetIterationTime(elapsed_seconds.count());
+    }
+
+    CUDA_CALL(cudaFree(optionsGpu));
+    CUDA_CALL(cudaFree(outputValsGpu));
+
+    delete [] values;
+    free(outputVals);
+}
+
 int main(int argc, char *argv[])
 {
     cli::Parser parser(argc, argv);
@@ -424,6 +522,14 @@ int main(int argc, char *argv[])
         benchmark::RegisterBenchmark(
             ("blackScholesCuda (+ Transfers)"),
             [=](benchmark::State& state) { runBenchmarkCudaV2(state, size); }
+        ),
+        benchmark::RegisterBenchmark(
+            ("blackScholesCudaOpt (Compute Only)"),
+            [=](benchmark::State& state) { runBenchmarkCudaV3(state, size); }
+        ),
+        benchmark::RegisterBenchmark(
+            ("blackScholesCudaOpt (+ Transfers)"),
+            [=](benchmark::State& state) { runBenchmarkCudaV4(state, size); }
         ),
     };
 
