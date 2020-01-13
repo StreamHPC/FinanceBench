@@ -2,8 +2,8 @@
 //Scott Grauer-Gray
 //Kernels for running black scholes using the analytic engine
 
-#ifndef BLACK_SCHOLES_ANALYTIC_ENGINE_KERNELS_CUH
-#define BLACK_SCHOLES_ANALYTIC_ENGINE_KERNELS_CUH
+#ifndef BLACK_SCHOLES_ANALYTIC_ENGINE_KERNELS_H
+#define BLACK_SCHOLES_ANALYTIC_ENGINE_KERNELS_H
 
 #include <stdio.h>
 
@@ -14,6 +14,7 @@
 
 //needed for the structs used on the code
 //#include "blackScholesAnalyticEngineStructs.h"
+#include <hip/hip_runtime.h>
 #include "blackScholesAnalyticEngineFuncs.h"
 
 //constants used in this code
@@ -29,4 +30,4 @@ __global__ void getOutValOptionOpt(optionInputStruct * options,
                                    float * outputVals,
                                    int numVals);
 
-#endif //BLACK_SCHOLES_ANALYTIC_ENGINE_KERNELS_CUH
+#endif //BLACK_SCHOLES_ANALYTIC_ENGINE_KERNELS_H

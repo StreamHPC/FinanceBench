@@ -12,11 +12,11 @@
 #include "cmdparser.hpp"
 
 #include "repoKernelsCpu.h"
-#ifdef BUILD_CUDA
-#include "repoKernels.cuh"
-#include <cuda_runtime.h>
+#ifdef BUILD_HIP
+#include "repoKernels.h"
+#include <hip/hip_runtime.h>
 
-#define CUDA_CALL(x) do { if((x)!=cudaSuccess) { \
+#define HIP_CALL(x) do { if((x)!=hipSuccess) { \
     printf("Error at %s:%d\n",__FILE__,__LINE__);\
     exit(EXIT_FAILURE);}} while(0)
 #endif
@@ -245,8 +245,8 @@ void runBenchmarkOpenMP(benchmark::State& state,
     free(inArgsHost.dummyStrike);
 }
 
-#ifdef BUILD_CUDA
-void runBenchmarkCudaV1(benchmark::State& state,
+#ifdef BUILD_HIP
+void runBenchmarkHipV1(benchmark::State& state,
                         size_t size)
 {
     int numRepos = size;
@@ -267,38 +267,38 @@ void runBenchmarkCudaV1(benchmark::State& state,
     inArgsStruct inArgsGpu;
     resultsStruct resultsGpu;
 
-    CUDA_CALL(cudaMalloc(&(resultsGpu.dirtyPrice), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(resultsGpu.accruedAmountSettlement), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(resultsGpu.accruedAmountDeliveryDate), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(resultsGpu.cleanPrice), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(resultsGpu.forwardSpotIncome), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(resultsGpu.underlyingBondFwd), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(resultsGpu.repoNpv), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(resultsGpu.repoCleanForwardPrice), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(resultsGpu.repoDirtyForwardPrice), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(resultsGpu.repoImpliedYield), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(resultsGpu.marketRepoRate), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(resultsGpu.bondForwardVal), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(inArgsGpu.discountCurve), numRepos * sizeof(repoYieldTermStruct)));
-    CUDA_CALL(cudaMalloc(&(inArgsGpu.repoCurve), numRepos * sizeof(repoYieldTermStruct)));
-    CUDA_CALL(cudaMalloc(&(inArgsGpu.settlementDate), numRepos * sizeof(repoDateStruct)));
-    CUDA_CALL(cudaMalloc(&(inArgsGpu.deliveryDate), numRepos * sizeof(repoDateStruct)));
-    CUDA_CALL(cudaMalloc(&(inArgsGpu.maturityDate), numRepos * sizeof(repoDateStruct)));
-    CUDA_CALL(cudaMalloc(&(inArgsGpu.repoDeliveryDate), numRepos * sizeof(repoDateStruct)));
-    CUDA_CALL(cudaMalloc(&(inArgsGpu.bondCleanPrice), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(inArgsGpu.bond), numRepos * sizeof(bondStruct)));
-    CUDA_CALL(cudaMalloc(&(inArgsGpu.dummyStrike), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(resultsGpu.dirtyPrice), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(resultsGpu.accruedAmountSettlement), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(resultsGpu.accruedAmountDeliveryDate), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(resultsGpu.cleanPrice), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(resultsGpu.forwardSpotIncome), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(resultsGpu.underlyingBondFwd), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(resultsGpu.repoNpv), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(resultsGpu.repoCleanForwardPrice), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(resultsGpu.repoDirtyForwardPrice), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(resultsGpu.repoImpliedYield), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(resultsGpu.marketRepoRate), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(resultsGpu.bondForwardVal), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(inArgsGpu.discountCurve), numRepos * sizeof(repoYieldTermStruct)));
+    HIP_CALL(hipMalloc(&(inArgsGpu.repoCurve), numRepos * sizeof(repoYieldTermStruct)));
+    HIP_CALL(hipMalloc(&(inArgsGpu.settlementDate), numRepos * sizeof(repoDateStruct)));
+    HIP_CALL(hipMalloc(&(inArgsGpu.deliveryDate), numRepos * sizeof(repoDateStruct)));
+    HIP_CALL(hipMalloc(&(inArgsGpu.maturityDate), numRepos * sizeof(repoDateStruct)));
+    HIP_CALL(hipMalloc(&(inArgsGpu.repoDeliveryDate), numRepos * sizeof(repoDateStruct)));
+    HIP_CALL(hipMalloc(&(inArgsGpu.bondCleanPrice), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(inArgsGpu.bond), numRepos * sizeof(bondStruct)));
+    HIP_CALL(hipMalloc(&(inArgsGpu.dummyStrike), numRepos * sizeof(dataType)));
 
-    CUDA_CALL(cudaMemcpy((inArgsGpu.discountCurve), inArgsHost.discountCurve, numRepos * sizeof(repoYieldTermStruct), cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMemcpy((inArgsGpu.repoCurve), inArgsHost.repoCurve, numRepos * sizeof(repoYieldTermStruct), cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMemcpy((inArgsGpu.settlementDate), inArgsHost.settlementDate, numRepos * sizeof(repoDateStruct), cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMemcpy((inArgsGpu.deliveryDate), inArgsHost.deliveryDate, numRepos * sizeof(repoDateStruct), cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMemcpy((inArgsGpu.maturityDate), inArgsHost.maturityDate, numRepos * sizeof(repoDateStruct), cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMemcpy((inArgsGpu.repoDeliveryDate), inArgsHost.repoDeliveryDate, numRepos * sizeof(repoDateStruct), cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMemcpy((inArgsGpu.bondCleanPrice), inArgsHost.bondCleanPrice, numRepos * sizeof(dataType), cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMemcpy((inArgsGpu.bond), inArgsHost.bond, numRepos * sizeof(bondStruct), cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaMemcpy((inArgsGpu.dummyStrike), inArgsHost.dummyStrike, numRepos * sizeof(dataType), cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaDeviceSynchronize());
+    HIP_CALL(hipMemcpy((inArgsGpu.discountCurve), inArgsHost.discountCurve, numRepos * sizeof(repoYieldTermStruct), hipMemcpyHostToDevice));
+    HIP_CALL(hipMemcpy((inArgsGpu.repoCurve), inArgsHost.repoCurve, numRepos * sizeof(repoYieldTermStruct), hipMemcpyHostToDevice));
+    HIP_CALL(hipMemcpy((inArgsGpu.settlementDate), inArgsHost.settlementDate, numRepos * sizeof(repoDateStruct), hipMemcpyHostToDevice));
+    HIP_CALL(hipMemcpy((inArgsGpu.deliveryDate), inArgsHost.deliveryDate, numRepos * sizeof(repoDateStruct), hipMemcpyHostToDevice));
+    HIP_CALL(hipMemcpy((inArgsGpu.maturityDate), inArgsHost.maturityDate, numRepos * sizeof(repoDateStruct), hipMemcpyHostToDevice));
+    HIP_CALL(hipMemcpy((inArgsGpu.repoDeliveryDate), inArgsHost.repoDeliveryDate, numRepos * sizeof(repoDateStruct), hipMemcpyHostToDevice));
+    HIP_CALL(hipMemcpy((inArgsGpu.bondCleanPrice), inArgsHost.bondCleanPrice, numRepos * sizeof(dataType), hipMemcpyHostToDevice));
+    HIP_CALL(hipMemcpy((inArgsGpu.bond), inArgsHost.bond, numRepos * sizeof(bondStruct), hipMemcpyHostToDevice));
+    HIP_CALL(hipMemcpy((inArgsGpu.dummyStrike), inArgsHost.dummyStrike, numRepos * sizeof(dataType), hipMemcpyHostToDevice));
+    HIP_CALL(hipDeviceSynchronize());
 
     dim3 blockDim(256, 1);
     dim3 gridDim((size_t)ceil((dataType)numRepos / (dataType)blockDim.x), 1);
@@ -306,18 +306,18 @@ void runBenchmarkCudaV1(benchmark::State& state,
     // Warm-up
     for(size_t i = 0; i < warmup_size; i++)
     {
-        getRepoResultsGpu<<<gridDim, blockDim>>>(inArgsGpu, resultsGpu, numRepos);
-        CUDA_CALL(cudaPeekAtLastError());
-        CUDA_CALL(cudaDeviceSynchronize());
+        hipLaunchKernelGGL((getRepoResultsGpu), dim3(gridDim), dim3(blockDim), 0, 0, inArgsGpu, resultsGpu, numRepos);
+        HIP_CALL(hipPeekAtLastError());
+        HIP_CALL(hipDeviceSynchronize());
     }
 
     for(auto _ : state)
     {
         auto start = std::chrono::high_resolution_clock::now();
 
-        getRepoResultsGpu<<<gridDim, blockDim>>>(inArgsGpu, resultsGpu, numRepos);
-        CUDA_CALL(cudaPeekAtLastError());
-        CUDA_CALL(cudaDeviceSynchronize());
+        hipLaunchKernelGGL((getRepoResultsGpu), dim3(gridDim), dim3(blockDim), 0, 0, inArgsGpu, resultsGpu, numRepos);
+        HIP_CALL(hipPeekAtLastError());
+        HIP_CALL(hipDeviceSynchronize());
 
         auto end = std::chrono::high_resolution_clock::now();
         auto elapsed_seconds =
@@ -325,27 +325,27 @@ void runBenchmarkCudaV1(benchmark::State& state,
         state.SetIterationTime(elapsed_seconds.count());
     }
 
-    CUDA_CALL(cudaFree(resultsGpu.dirtyPrice));
-    CUDA_CALL(cudaFree(resultsGpu.accruedAmountSettlement));
-    CUDA_CALL(cudaFree(resultsGpu.accruedAmountDeliveryDate));
-    CUDA_CALL(cudaFree(resultsGpu.cleanPrice));
-    CUDA_CALL(cudaFree(resultsGpu.forwardSpotIncome));
-    CUDA_CALL(cudaFree(resultsGpu.underlyingBondFwd));
-    CUDA_CALL(cudaFree(resultsGpu.repoNpv));
-    CUDA_CALL(cudaFree(resultsGpu.repoCleanForwardPrice));
-    CUDA_CALL(cudaFree(resultsGpu.repoDirtyForwardPrice));
-    CUDA_CALL(cudaFree(resultsGpu.repoImpliedYield));
-    CUDA_CALL(cudaFree(resultsGpu.marketRepoRate));
-    CUDA_CALL(cudaFree(resultsGpu.bondForwardVal));
-    CUDA_CALL(cudaFree(inArgsGpu.discountCurve));
-    CUDA_CALL(cudaFree(inArgsGpu.repoCurve));
-    CUDA_CALL(cudaFree(inArgsGpu.settlementDate));
-    CUDA_CALL(cudaFree(inArgsGpu.deliveryDate));
-    CUDA_CALL(cudaFree(inArgsGpu.maturityDate));
-    CUDA_CALL(cudaFree(inArgsGpu.repoDeliveryDate));
-    CUDA_CALL(cudaFree(inArgsGpu.bondCleanPrice));
-    CUDA_CALL(cudaFree(inArgsGpu.bond));
-    CUDA_CALL(cudaFree(inArgsGpu.dummyStrike));
+    HIP_CALL(hipFree(resultsGpu.dirtyPrice));
+    HIP_CALL(hipFree(resultsGpu.accruedAmountSettlement));
+    HIP_CALL(hipFree(resultsGpu.accruedAmountDeliveryDate));
+    HIP_CALL(hipFree(resultsGpu.cleanPrice));
+    HIP_CALL(hipFree(resultsGpu.forwardSpotIncome));
+    HIP_CALL(hipFree(resultsGpu.underlyingBondFwd));
+    HIP_CALL(hipFree(resultsGpu.repoNpv));
+    HIP_CALL(hipFree(resultsGpu.repoCleanForwardPrice));
+    HIP_CALL(hipFree(resultsGpu.repoDirtyForwardPrice));
+    HIP_CALL(hipFree(resultsGpu.repoImpliedYield));
+    HIP_CALL(hipFree(resultsGpu.marketRepoRate));
+    HIP_CALL(hipFree(resultsGpu.bondForwardVal));
+    HIP_CALL(hipFree(inArgsGpu.discountCurve));
+    HIP_CALL(hipFree(inArgsGpu.repoCurve));
+    HIP_CALL(hipFree(inArgsGpu.settlementDate));
+    HIP_CALL(hipFree(inArgsGpu.deliveryDate));
+    HIP_CALL(hipFree(inArgsGpu.maturityDate));
+    HIP_CALL(hipFree(inArgsGpu.repoDeliveryDate));
+    HIP_CALL(hipFree(inArgsGpu.bondCleanPrice));
+    HIP_CALL(hipFree(inArgsGpu.bond));
+    HIP_CALL(hipFree(inArgsGpu.dummyStrike));
 
     free(inArgsHost.discountCurve);
     free(inArgsHost.repoCurve);
@@ -358,7 +358,7 @@ void runBenchmarkCudaV1(benchmark::State& state,
     free(inArgsHost.dummyStrike);
 }
 
-void runBenchmarkCudaV2(benchmark::State& state,
+void runBenchmarkHipV2(benchmark::State& state,
                         size_t size)
 {
     int numRepos = size;
@@ -393,27 +393,27 @@ void runBenchmarkCudaV2(benchmark::State& state,
     inArgsStruct inArgsGpu;
     resultsStruct resultsGpu;
 
-    CUDA_CALL(cudaMalloc(&(resultsGpu.dirtyPrice), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(resultsGpu.accruedAmountSettlement), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(resultsGpu.accruedAmountDeliveryDate), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(resultsGpu.cleanPrice), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(resultsGpu.forwardSpotIncome), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(resultsGpu.underlyingBondFwd), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(resultsGpu.repoNpv), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(resultsGpu.repoCleanForwardPrice), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(resultsGpu.repoDirtyForwardPrice), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(resultsGpu.repoImpliedYield), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(resultsGpu.marketRepoRate), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(resultsGpu.bondForwardVal), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(inArgsGpu.discountCurve), numRepos * sizeof(repoYieldTermStruct)));
-    CUDA_CALL(cudaMalloc(&(inArgsGpu.repoCurve), numRepos * sizeof(repoYieldTermStruct)));
-    CUDA_CALL(cudaMalloc(&(inArgsGpu.settlementDate), numRepos * sizeof(repoDateStruct)));
-    CUDA_CALL(cudaMalloc(&(inArgsGpu.deliveryDate), numRepos * sizeof(repoDateStruct)));
-    CUDA_CALL(cudaMalloc(&(inArgsGpu.maturityDate), numRepos * sizeof(repoDateStruct)));
-    CUDA_CALL(cudaMalloc(&(inArgsGpu.repoDeliveryDate), numRepos * sizeof(repoDateStruct)));
-    CUDA_CALL(cudaMalloc(&(inArgsGpu.bondCleanPrice), numRepos * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&(inArgsGpu.bond), numRepos * sizeof(bondStruct)));
-    CUDA_CALL(cudaMalloc(&(inArgsGpu.dummyStrike), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(resultsGpu.dirtyPrice), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(resultsGpu.accruedAmountSettlement), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(resultsGpu.accruedAmountDeliveryDate), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(resultsGpu.cleanPrice), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(resultsGpu.forwardSpotIncome), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(resultsGpu.underlyingBondFwd), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(resultsGpu.repoNpv), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(resultsGpu.repoCleanForwardPrice), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(resultsGpu.repoDirtyForwardPrice), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(resultsGpu.repoImpliedYield), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(resultsGpu.marketRepoRate), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(resultsGpu.bondForwardVal), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(inArgsGpu.discountCurve), numRepos * sizeof(repoYieldTermStruct)));
+    HIP_CALL(hipMalloc(&(inArgsGpu.repoCurve), numRepos * sizeof(repoYieldTermStruct)));
+    HIP_CALL(hipMalloc(&(inArgsGpu.settlementDate), numRepos * sizeof(repoDateStruct)));
+    HIP_CALL(hipMalloc(&(inArgsGpu.deliveryDate), numRepos * sizeof(repoDateStruct)));
+    HIP_CALL(hipMalloc(&(inArgsGpu.maturityDate), numRepos * sizeof(repoDateStruct)));
+    HIP_CALL(hipMalloc(&(inArgsGpu.repoDeliveryDate), numRepos * sizeof(repoDateStruct)));
+    HIP_CALL(hipMalloc(&(inArgsGpu.bondCleanPrice), numRepos * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&(inArgsGpu.bond), numRepos * sizeof(bondStruct)));
+    HIP_CALL(hipMalloc(&(inArgsGpu.dummyStrike), numRepos * sizeof(dataType)));
 
     dim3 blockDim(256, 1);
     dim3 gridDim((size_t)ceil((dataType)numRepos / (dataType)blockDim.x), 1);
@@ -421,41 +421,41 @@ void runBenchmarkCudaV2(benchmark::State& state,
     // Warm-up
     for(size_t i = 0; i < warmup_size; i++)
     {
-        getRepoResultsGpu<<<gridDim, blockDim>>>(inArgsGpu, resultsGpu, numRepos);
-        CUDA_CALL(cudaPeekAtLastError());
-        CUDA_CALL(cudaDeviceSynchronize());
+        hipLaunchKernelGGL((getRepoResultsGpu), dim3(gridDim), dim3(blockDim), 0, 0, inArgsGpu, resultsGpu, numRepos);
+        HIP_CALL(hipPeekAtLastError());
+        HIP_CALL(hipDeviceSynchronize());
     }
 
     for(auto _ : state)
     {
         auto start = std::chrono::high_resolution_clock::now();
 
-        CUDA_CALL(cudaMemcpy((inArgsGpu.discountCurve), inArgsHost.discountCurve, numRepos * sizeof(repoYieldTermStruct), cudaMemcpyHostToDevice));
-        CUDA_CALL(cudaMemcpy((inArgsGpu.repoCurve), inArgsHost.repoCurve, numRepos * sizeof(repoYieldTermStruct), cudaMemcpyHostToDevice));
-        CUDA_CALL(cudaMemcpy((inArgsGpu.settlementDate), inArgsHost.settlementDate, numRepos * sizeof(repoDateStruct), cudaMemcpyHostToDevice));
-        CUDA_CALL(cudaMemcpy((inArgsGpu.deliveryDate), inArgsHost.deliveryDate, numRepos * sizeof(repoDateStruct), cudaMemcpyHostToDevice));
-        CUDA_CALL(cudaMemcpy((inArgsGpu.maturityDate), inArgsHost.maturityDate, numRepos * sizeof(repoDateStruct), cudaMemcpyHostToDevice));
-        CUDA_CALL(cudaMemcpy((inArgsGpu.repoDeliveryDate), inArgsHost.repoDeliveryDate, numRepos * sizeof(repoDateStruct), cudaMemcpyHostToDevice));
-        CUDA_CALL(cudaMemcpy((inArgsGpu.bondCleanPrice), inArgsHost.bondCleanPrice, numRepos * sizeof(dataType), cudaMemcpyHostToDevice));
-        CUDA_CALL(cudaMemcpy((inArgsGpu.bond), inArgsHost.bond, numRepos * sizeof(bondStruct), cudaMemcpyHostToDevice));
-        CUDA_CALL(cudaMemcpy((inArgsGpu.dummyStrike), inArgsHost.dummyStrike, numRepos * sizeof(dataType), cudaMemcpyHostToDevice));
+        HIP_CALL(hipMemcpy((inArgsGpu.discountCurve), inArgsHost.discountCurve, numRepos * sizeof(repoYieldTermStruct), hipMemcpyHostToDevice));
+        HIP_CALL(hipMemcpy((inArgsGpu.repoCurve), inArgsHost.repoCurve, numRepos * sizeof(repoYieldTermStruct), hipMemcpyHostToDevice));
+        HIP_CALL(hipMemcpy((inArgsGpu.settlementDate), inArgsHost.settlementDate, numRepos * sizeof(repoDateStruct), hipMemcpyHostToDevice));
+        HIP_CALL(hipMemcpy((inArgsGpu.deliveryDate), inArgsHost.deliveryDate, numRepos * sizeof(repoDateStruct), hipMemcpyHostToDevice));
+        HIP_CALL(hipMemcpy((inArgsGpu.maturityDate), inArgsHost.maturityDate, numRepos * sizeof(repoDateStruct), hipMemcpyHostToDevice));
+        HIP_CALL(hipMemcpy((inArgsGpu.repoDeliveryDate), inArgsHost.repoDeliveryDate, numRepos * sizeof(repoDateStruct), hipMemcpyHostToDevice));
+        HIP_CALL(hipMemcpy((inArgsGpu.bondCleanPrice), inArgsHost.bondCleanPrice, numRepos * sizeof(dataType), hipMemcpyHostToDevice));
+        HIP_CALL(hipMemcpy((inArgsGpu.bond), inArgsHost.bond, numRepos * sizeof(bondStruct), hipMemcpyHostToDevice));
+        HIP_CALL(hipMemcpy((inArgsGpu.dummyStrike), inArgsHost.dummyStrike, numRepos * sizeof(dataType), hipMemcpyHostToDevice));
 
-        getRepoResultsGpu<<<gridDim, blockDim>>>(inArgsGpu, resultsGpu, numRepos);
-        CUDA_CALL(cudaPeekAtLastError());
+        hipLaunchKernelGGL((getRepoResultsGpu), dim3(gridDim), dim3(blockDim), 0, 0, inArgsGpu, resultsGpu, numRepos);
+        HIP_CALL(hipPeekAtLastError());
 
-        CUDA_CALL(cudaMemcpy(resultsHost.dirtyPrice, (resultsGpu.dirtyPrice), numRepos * sizeof(dataType), cudaMemcpyDeviceToHost));
-		CUDA_CALL(cudaMemcpy(resultsHost.accruedAmountSettlement, (resultsGpu.accruedAmountSettlement), numRepos * sizeof(dataType), cudaMemcpyDeviceToHost));
-		CUDA_CALL(cudaMemcpy(resultsHost.accruedAmountDeliveryDate, (resultsGpu.accruedAmountDeliveryDate), numRepos * sizeof(dataType),cudaMemcpyDeviceToHost));
-		CUDA_CALL(cudaMemcpy(resultsHost.cleanPrice, (resultsGpu.cleanPrice), numRepos * sizeof(dataType), cudaMemcpyDeviceToHost));
-		CUDA_CALL(cudaMemcpy(resultsHost.forwardSpotIncome, (resultsGpu.forwardSpotIncome), numRepos * sizeof(dataType), cudaMemcpyDeviceToHost));
-		CUDA_CALL(cudaMemcpy(resultsHost.underlyingBondFwd, (resultsGpu.underlyingBondFwd), numRepos * sizeof(dataType), cudaMemcpyDeviceToHost));
-		CUDA_CALL(cudaMemcpy(resultsHost.repoNpv, (resultsGpu.repoNpv), numRepos *sizeof(dataType), cudaMemcpyDeviceToHost));
-		CUDA_CALL(cudaMemcpy(resultsHost.repoCleanForwardPrice, (resultsGpu.repoCleanForwardPrice), numRepos * sizeof(dataType), cudaMemcpyDeviceToHost));
-		CUDA_CALL(cudaMemcpy(resultsHost.repoDirtyForwardPrice, (resultsGpu.repoDirtyForwardPrice), numRepos * sizeof(dataType), cudaMemcpyDeviceToHost));
-		CUDA_CALL(cudaMemcpy(resultsHost.repoImpliedYield, (resultsGpu.repoImpliedYield), numRepos * sizeof(dataType), cudaMemcpyDeviceToHost));
-		CUDA_CALL(cudaMemcpy(resultsHost.marketRepoRate, (resultsGpu.marketRepoRate), numRepos * sizeof(dataType), cudaMemcpyDeviceToHost));
-		CUDA_CALL(cudaMemcpy(resultsHost.bondForwardVal, (resultsGpu.bondForwardVal), numRepos * sizeof(dataType), cudaMemcpyDeviceToHost));
-        CUDA_CALL(cudaDeviceSynchronize());
+        HIP_CALL(hipMemcpy(resultsHost.dirtyPrice, (resultsGpu.dirtyPrice), numRepos * sizeof(dataType), hipMemcpyDeviceToHost));
+		HIP_CALL(hipMemcpy(resultsHost.accruedAmountSettlement, (resultsGpu.accruedAmountSettlement), numRepos * sizeof(dataType), hipMemcpyDeviceToHost));
+		HIP_CALL(hipMemcpy(resultsHost.accruedAmountDeliveryDate, (resultsGpu.accruedAmountDeliveryDate), numRepos * sizeof(dataType),hipMemcpyDeviceToHost));
+		HIP_CALL(hipMemcpy(resultsHost.cleanPrice, (resultsGpu.cleanPrice), numRepos * sizeof(dataType), hipMemcpyDeviceToHost));
+		HIP_CALL(hipMemcpy(resultsHost.forwardSpotIncome, (resultsGpu.forwardSpotIncome), numRepos * sizeof(dataType), hipMemcpyDeviceToHost));
+		HIP_CALL(hipMemcpy(resultsHost.underlyingBondFwd, (resultsGpu.underlyingBondFwd), numRepos * sizeof(dataType), hipMemcpyDeviceToHost));
+		HIP_CALL(hipMemcpy(resultsHost.repoNpv, (resultsGpu.repoNpv), numRepos *sizeof(dataType), hipMemcpyDeviceToHost));
+		HIP_CALL(hipMemcpy(resultsHost.repoCleanForwardPrice, (resultsGpu.repoCleanForwardPrice), numRepos * sizeof(dataType), hipMemcpyDeviceToHost));
+		HIP_CALL(hipMemcpy(resultsHost.repoDirtyForwardPrice, (resultsGpu.repoDirtyForwardPrice), numRepos * sizeof(dataType), hipMemcpyDeviceToHost));
+		HIP_CALL(hipMemcpy(resultsHost.repoImpliedYield, (resultsGpu.repoImpliedYield), numRepos * sizeof(dataType), hipMemcpyDeviceToHost));
+		HIP_CALL(hipMemcpy(resultsHost.marketRepoRate, (resultsGpu.marketRepoRate), numRepos * sizeof(dataType), hipMemcpyDeviceToHost));
+		HIP_CALL(hipMemcpy(resultsHost.bondForwardVal, (resultsGpu.bondForwardVal), numRepos * sizeof(dataType), hipMemcpyDeviceToHost));
+        HIP_CALL(hipDeviceSynchronize());
 
         auto end = std::chrono::high_resolution_clock::now();
         auto elapsed_seconds =
@@ -463,27 +463,27 @@ void runBenchmarkCudaV2(benchmark::State& state,
         state.SetIterationTime(elapsed_seconds.count());
     }
 
-    CUDA_CALL(cudaFree(resultsGpu.dirtyPrice));
-    CUDA_CALL(cudaFree(resultsGpu.accruedAmountSettlement));
-    CUDA_CALL(cudaFree(resultsGpu.accruedAmountDeliveryDate));
-    CUDA_CALL(cudaFree(resultsGpu.cleanPrice));
-    CUDA_CALL(cudaFree(resultsGpu.forwardSpotIncome));
-    CUDA_CALL(cudaFree(resultsGpu.underlyingBondFwd));
-    CUDA_CALL(cudaFree(resultsGpu.repoNpv));
-    CUDA_CALL(cudaFree(resultsGpu.repoCleanForwardPrice));
-    CUDA_CALL(cudaFree(resultsGpu.repoDirtyForwardPrice));
-    CUDA_CALL(cudaFree(resultsGpu.repoImpliedYield));
-    CUDA_CALL(cudaFree(resultsGpu.marketRepoRate));
-    CUDA_CALL(cudaFree(resultsGpu.bondForwardVal));
-    CUDA_CALL(cudaFree(inArgsGpu.discountCurve));
-    CUDA_CALL(cudaFree(inArgsGpu.repoCurve));
-    CUDA_CALL(cudaFree(inArgsGpu.settlementDate));
-    CUDA_CALL(cudaFree(inArgsGpu.deliveryDate));
-    CUDA_CALL(cudaFree(inArgsGpu.maturityDate));
-    CUDA_CALL(cudaFree(inArgsGpu.repoDeliveryDate));
-    CUDA_CALL(cudaFree(inArgsGpu.bondCleanPrice));
-    CUDA_CALL(cudaFree(inArgsGpu.bond));
-    CUDA_CALL(cudaFree(inArgsGpu.dummyStrike));
+    HIP_CALL(hipFree(resultsGpu.dirtyPrice));
+    HIP_CALL(hipFree(resultsGpu.accruedAmountSettlement));
+    HIP_CALL(hipFree(resultsGpu.accruedAmountDeliveryDate));
+    HIP_CALL(hipFree(resultsGpu.cleanPrice));
+    HIP_CALL(hipFree(resultsGpu.forwardSpotIncome));
+    HIP_CALL(hipFree(resultsGpu.underlyingBondFwd));
+    HIP_CALL(hipFree(resultsGpu.repoNpv));
+    HIP_CALL(hipFree(resultsGpu.repoCleanForwardPrice));
+    HIP_CALL(hipFree(resultsGpu.repoDirtyForwardPrice));
+    HIP_CALL(hipFree(resultsGpu.repoImpliedYield));
+    HIP_CALL(hipFree(resultsGpu.marketRepoRate));
+    HIP_CALL(hipFree(resultsGpu.bondForwardVal));
+    HIP_CALL(hipFree(inArgsGpu.discountCurve));
+    HIP_CALL(hipFree(inArgsGpu.repoCurve));
+    HIP_CALL(hipFree(inArgsGpu.settlementDate));
+    HIP_CALL(hipFree(inArgsGpu.deliveryDate));
+    HIP_CALL(hipFree(inArgsGpu.maturityDate));
+    HIP_CALL(hipFree(inArgsGpu.repoDeliveryDate));
+    HIP_CALL(hipFree(inArgsGpu.bondCleanPrice));
+    HIP_CALL(hipFree(inArgsGpu.bond));
+    HIP_CALL(hipFree(inArgsGpu.dummyStrike));
 
     free(resultsHost.dirtyPrice);
     free(resultsHost.accruedAmountSettlement);
@@ -526,15 +526,12 @@ int main(int argc, char *argv[])
     const int seed = parser.get<int>("seed");
     srand(seed);
 
-    #ifdef BUILD_CUDA
-    int runtime_version;
-    CUDA_CALL(cudaRuntimeGetVersion(&runtime_version));
+    #ifdef BUILD_HIP
     int device_id;
-    CUDA_CALL(cudaGetDevice(&device_id));
-    cudaDeviceProp props;
-    CUDA_CALL(cudaGetDeviceProperties(&props, device_id));
+    HIP_CALL(hipGetDevice(&device_id));
+    hipDeviceProp_t props;
+    HIP_CALL(hipGetDeviceProperties(&props, device_id));
 
-    std::cout << "Runtime: " << runtime_version << " ";
     std::cout << "Device: " << props.name;
     std::cout << std::endl << std::endl;
     #endif
@@ -549,14 +546,14 @@ int main(int argc, char *argv[])
             ("repo (OpenMP)"),
             [=](benchmark::State& state) { runBenchmarkOpenMP(state, size); }
         ),
-        #ifdef BUILD_CUDA
+        #ifdef BUILD_HIP
         benchmark::RegisterBenchmark(
-            ("repoCuda (Compute Only)"),
-            [=](benchmark::State& state) { runBenchmarkCudaV1(state, size); }
+            ("repoHip (Compute Only)"),
+            [=](benchmark::State& state) { runBenchmarkHipV1(state, size); }
         ),
         benchmark::RegisterBenchmark(
-            ("repoCuda (+ Transfers)"),
-            [=](benchmark::State& state) { runBenchmarkCudaV2(state, size); }
+            ("repoHip (+ Transfers)"),
+            [=](benchmark::State& state) { runBenchmarkHipV2(state, size); }
         ),
         #endif
     };

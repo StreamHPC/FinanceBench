@@ -2,7 +2,7 @@
 //Scott Grauer-Gray
 //Bonds kernels to run on the GPU w/ CUDA
 
-#include "bondsKernelsGpu.cuh"
+#include "bondsKernelsGpu.h"
 
 __global__ void getBondsResultsGpu(inArgsStruct inArgs,
                                    resultsStruct results,

@@ -10,7 +10,7 @@
 #include "monteCarloStructs.h"
 #include <math.h>
 
-#ifdef __NVCC__
+#if defined(__HIPCC__) || defined(__NVCC__)
     #define HOST_DEVICE __host__ __device__ inline
 #else
     #define HOST_DEVICE inline

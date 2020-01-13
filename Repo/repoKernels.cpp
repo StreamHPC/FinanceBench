@@ -2,7 +2,7 @@
 //Scott Grauer-Gray
 //Kernels for running Repo on the
 
-#include "repoKernels.cuh"
+#include "repoKernels.h"
 
 __global__ void getRepoResultsGpu(inArgsStruct inArgs,
                                   resultsStruct results,

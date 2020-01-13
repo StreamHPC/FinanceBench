@@ -3,10 +3,10 @@
 //May 10, 2012
 //GPU Kernels for running monte carlo
 
-#include "monteCarloKernels.cuh"
+#include "monteCarloKernels.h"
 
 //function to set up the random states
-__global__ void setup_kernel(curandState * state,
+__global__ void setup_kernel(hiprandState * state,
                              int seedVal,
                              int numSamples)
 {
@@ -15,6 +15,6 @@ __global__ void setup_kernel(curandState * state,
     {
         /* Each thread gets same seed , a different sequence
         number , no offset */
-        curand_init(seedVal, id, 0, &(state[id]));
+        hiprand_init(seedVal, id, 0, &(state[id]));
     }
 }

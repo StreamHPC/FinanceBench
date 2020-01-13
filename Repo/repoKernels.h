@@ -2,13 +2,14 @@
 //Scott Grauer-Gray
 //Headers for kernels for running repo on the GPU
 
-#ifndef REPO_KERNELS_CUH
-#define REPO_KERNELS_CUH
+#ifndef REPO_KERNELS_H
+#define REPO_KERNELS_H
 
+#include <hip/hip_runtime.h>
 #include "repoFuncs.h"
 
 __global__ void getRepoResultsGpu(inArgsStruct inArgs,
 					              resultsStruct results,
 					              int n);
 
-#endif //REPO_KERNELS_CUH
+#endif //REPO_KERNELS_H

@@ -12,11 +12,11 @@
 #include "cmdparser.hpp"
 
 #include "monteCarloKernelsCpu.h"
-#ifdef BUILD_CUDA
-#include "monteCarloKernels.cuh"
-#include <cuda_runtime.h>
+#ifdef BUILD_HIP
+#include "monteCarloKernels.h"
+#include <hip/hip_runtime.h>
 
-#define CUDA_CALL(x) do { if((x)!=cudaSuccess) { \
+#define HIP_CALL(x) do { if((x)!=hipSuccess) { \
     printf("Error at %s:%d\n",__FILE__,__LINE__);\
     exit(EXIT_FAILURE);}} while(0)
 #endif
@@ -147,8 +147,8 @@ void runBenchmarkOpenMP(benchmark::State& state,
     free(optionStructs);
 }
 
-#ifdef BUILD_CUDA
-void runBenchmarkCudaV1(benchmark::State& state,
+#ifdef BUILD_HIP
+void runBenchmarkHipV1(benchmark::State& state,
                         int seed,
                         size_t size)
 {
@@ -160,7 +160,7 @@ void runBenchmarkCudaV1(benchmark::State& state,
     dataType * sampleWeights;
     dataType * times;
 
-    curandState * devStates;
+    hiprandState * devStates;
     dataType * samplePricesGpu;
     dataType * sampleWeightsGpu;
     dataType * timesGpu;
@@ -171,14 +171,14 @@ void runBenchmarkCudaV1(benchmark::State& state,
     sampleWeights = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
     times = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
 
-    CUDA_CALL(cudaMalloc((void **)&devStates, size * sizeof(curandState)));
-    CUDA_CALL(cudaMalloc(&samplePricesGpu, NUM_OPTIONS * size * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&sampleWeightsGpu, NUM_OPTIONS * size * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&timesGpu, NUM_OPTIONS * size * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&optionStructsGpu, NUM_OPTIONS * sizeof(monteCarloOptionStruct)));
+    HIP_CALL(hipMalloc((void **)&devStates, size * sizeof(hiprandState)));
+    HIP_CALL(hipMalloc(&samplePricesGpu, NUM_OPTIONS * size * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&sampleWeightsGpu, NUM_OPTIONS * size * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&timesGpu, NUM_OPTIONS * size * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&optionStructsGpu, NUM_OPTIONS * sizeof(monteCarloOptionStruct)));
 
-    CUDA_CALL(cudaMemcpy(optionStructsGpu, optionStructs, NUM_OPTIONS * sizeof(monteCarloOptionStruct), cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaDeviceSynchronize());
+    HIP_CALL(hipMemcpy(optionStructsGpu, optionStructs, NUM_OPTIONS * sizeof(monteCarloOptionStruct), hipMemcpyHostToDevice));
+    HIP_CALL(hipDeviceSynchronize());
 
     dim3 grid((size_t)ceil((dataType)size / ((dataType)THREAD_BLOCK_SIZE)), 1, 1);
     dim3 threads(THREAD_BLOCK_SIZE, 1, 1);
@@ -186,30 +186,30 @@ void runBenchmarkCudaV1(benchmark::State& state,
     // Warm-up
     for(size_t i = 0; i < warmup_size; i++)
     {
-        setup_kernel<<<grid, threads>>>(devStates, seed, size);
-        CUDA_CALL(cudaPeekAtLastError());
-        monteCarloGpuKernel<<<grid, threads>>>(
+        hipLaunchKernelGGL((setup_kernel), dim3(grid), dim3(threads), 0, 0, devStates, seed, size);
+        HIP_CALL(hipPeekAtLastError());
+        hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, 0,
             samplePricesGpu, sampleWeightsGpu, timesGpu,
             (1.0f / (dataType)SEQUENCE_LENGTH), devStates, optionStructsGpu,
             seed, size
         );
-        CUDA_CALL(cudaPeekAtLastError());
-        CUDA_CALL(cudaDeviceSynchronize());
+        HIP_CALL(hipPeekAtLastError());
+        HIP_CALL(hipDeviceSynchronize());
     }
 
     for(auto _ : state)
     {
         auto start = std::chrono::high_resolution_clock::now();
 
-        setup_kernel<<<grid, threads>>>(devStates, seed, size);
-        CUDA_CALL(cudaPeekAtLastError());
-        monteCarloGpuKernel<<<grid, threads>>>(
+        hipLaunchKernelGGL((setup_kernel), dim3(grid), dim3(threads), 0, 0, devStates, seed, size);
+        HIP_CALL(hipPeekAtLastError());
+        hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, 0,
             samplePricesGpu, sampleWeightsGpu, timesGpu,
             (1.0f / (dataType)SEQUENCE_LENGTH), devStates, optionStructsGpu,
             seed, size
         );
-        CUDA_CALL(cudaPeekAtLastError());
-        CUDA_CALL(cudaDeviceSynchronize());
+        HIP_CALL(hipPeekAtLastError());
+        HIP_CALL(hipDeviceSynchronize());
 
         auto end = std::chrono::high_resolution_clock::now();
         auto elapsed_seconds =
@@ -217,11 +217,11 @@ void runBenchmarkCudaV1(benchmark::State& state,
         state.SetIterationTime(elapsed_seconds.count());
     }
 
-    CUDA_CALL(cudaFree(devStates));
-    CUDA_CALL(cudaFree(samplePricesGpu));
-    CUDA_CALL(cudaFree(sampleWeightsGpu));
-    CUDA_CALL(cudaFree(timesGpu));
-    CUDA_CALL(cudaFree(optionStructsGpu));
+    HIP_CALL(hipFree(devStates));
+    HIP_CALL(hipFree(samplePricesGpu));
+    HIP_CALL(hipFree(sampleWeightsGpu));
+    HIP_CALL(hipFree(timesGpu));
+    HIP_CALL(hipFree(optionStructsGpu));
 
     free(samplePrices);
     free(sampleWeights);
@@ -229,7 +229,7 @@ void runBenchmarkCudaV1(benchmark::State& state,
     free(optionStructs);
 }
 
-void runBenchmarkCudaV2(benchmark::State& state,
+void runBenchmarkHipV2(benchmark::State& state,
                         int seed,
                         size_t size)
 {
@@ -241,7 +241,7 @@ void runBenchmarkCudaV2(benchmark::State& state,
     dataType * sampleWeights;
     dataType * times;
 
-    curandState * devStates;
+    hiprandState * devStates;
     dataType * samplePricesGpu;
     dataType * sampleWeightsGpu;
     dataType * timesGpu;
@@ -252,11 +252,11 @@ void runBenchmarkCudaV2(benchmark::State& state,
     sampleWeights = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
     times = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
 
-    CUDA_CALL(cudaMalloc((void **)&devStates, size * sizeof(curandState)));
-    CUDA_CALL(cudaMalloc(&samplePricesGpu, NUM_OPTIONS * size * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&sampleWeightsGpu, NUM_OPTIONS * size * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&timesGpu, NUM_OPTIONS * size * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&optionStructsGpu, NUM_OPTIONS * sizeof(monteCarloOptionStruct)));
+    HIP_CALL(hipMalloc((void **)&devStates, size * sizeof(hiprandState)));
+    HIP_CALL(hipMalloc(&samplePricesGpu, NUM_OPTIONS * size * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&sampleWeightsGpu, NUM_OPTIONS * size * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&timesGpu, NUM_OPTIONS * size * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&optionStructsGpu, NUM_OPTIONS * sizeof(monteCarloOptionStruct)));
 
     dim3 grid((size_t)ceil((dataType)size / ((dataType)THREAD_BLOCK_SIZE)), 1, 1);
     dim3 threads(THREAD_BLOCK_SIZE, 1, 1);
@@ -264,35 +264,35 @@ void runBenchmarkCudaV2(benchmark::State& state,
     // Warm-up
     for(size_t i = 0; i < warmup_size; i++)
     {
-        setup_kernel<<<grid, threads>>>(devStates, seed, size);
-        //cudaDeviceSynchronize();
-        monteCarloGpuKernel<<<grid, threads>>>(
+        hipLaunchKernelGGL((setup_kernel), dim3(grid), dim3(threads), 0, 0, devStates, seed, size);
+        //hipDeviceSynchronize();
+        hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, 0,
             samplePricesGpu, sampleWeightsGpu, timesGpu,
             (1.0f / (dataType)SEQUENCE_LENGTH), devStates, optionStructsGpu,
             seed, size
         );
-        CUDA_CALL(cudaDeviceSynchronize());
+        HIP_CALL(hipDeviceSynchronize());
     }
 
     for(auto _ : state)
     {
         auto start = std::chrono::high_resolution_clock::now();
 
-        CUDA_CALL(cudaMemcpy(optionStructsGpu, optionStructs, NUM_OPTIONS * sizeof(monteCarloOptionStruct), cudaMemcpyHostToDevice));
+        HIP_CALL(hipMemcpy(optionStructsGpu, optionStructs, NUM_OPTIONS * sizeof(monteCarloOptionStruct), hipMemcpyHostToDevice));
 
-        setup_kernel<<<grid, threads>>>(devStates, seed, size);
-        CUDA_CALL(cudaPeekAtLastError());
-        monteCarloGpuKernel<<<grid, threads>>>(
+        hipLaunchKernelGGL((setup_kernel), dim3(grid), dim3(threads), 0, 0, devStates, seed, size);
+        HIP_CALL(hipPeekAtLastError());
+        hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, 0,
             samplePricesGpu, sampleWeightsGpu, timesGpu,
             (1.0f / (dataType)SEQUENCE_LENGTH), devStates, optionStructsGpu,
             seed, size
         );
-        CUDA_CALL(cudaPeekAtLastError());
+        HIP_CALL(hipPeekAtLastError());
 
-        CUDA_CALL(cudaMemcpy(samplePrices, samplePricesGpu, size * sizeof(dataType), cudaMemcpyDeviceToHost));
-        CUDA_CALL(cudaMemcpy(sampleWeights, sampleWeightsGpu, size * sizeof(dataType), cudaMemcpyDeviceToHost));
-        CUDA_CALL(cudaMemcpy(times, timesGpu, size * sizeof(dataType), cudaMemcpyDeviceToHost));
-        CUDA_CALL(cudaDeviceSynchronize());
+        HIP_CALL(hipMemcpy(samplePrices, samplePricesGpu, size * sizeof(dataType), hipMemcpyDeviceToHost));
+        HIP_CALL(hipMemcpy(sampleWeights, sampleWeightsGpu, size * sizeof(dataType), hipMemcpyDeviceToHost));
+        HIP_CALL(hipMemcpy(times, timesGpu, size * sizeof(dataType), hipMemcpyDeviceToHost));
+        HIP_CALL(hipDeviceSynchronize());
 
         auto end = std::chrono::high_resolution_clock::now();
         auto elapsed_seconds =
@@ -300,11 +300,11 @@ void runBenchmarkCudaV2(benchmark::State& state,
         state.SetIterationTime(elapsed_seconds.count());
     }
 
-    CUDA_CALL(cudaFree(devStates));
-    CUDA_CALL(cudaFree(samplePricesGpu));
-    CUDA_CALL(cudaFree(sampleWeightsGpu));
-    CUDA_CALL(cudaFree(timesGpu));
-    CUDA_CALL(cudaFree(optionStructsGpu));
+    HIP_CALL(hipFree(devStates));
+    HIP_CALL(hipFree(samplePricesGpu));
+    HIP_CALL(hipFree(sampleWeightsGpu));
+    HIP_CALL(hipFree(timesGpu));
+    HIP_CALL(hipFree(optionStructsGpu));
 
     free(samplePrices);
     free(sampleWeights);
@@ -312,7 +312,7 @@ void runBenchmarkCudaV2(benchmark::State& state,
     free(optionStructs);
 }
 
-void runBenchmarkCudaV3(benchmark::State& state,
+void runBenchmarkHipV3(benchmark::State& state,
                         int seed,
                         size_t size)
 {
@@ -324,7 +324,7 @@ void runBenchmarkCudaV3(benchmark::State& state,
     dataType * sampleWeights;
     dataType * times;
 
-    curandStatePhilox4_32_10_t * devStates;
+    hiprandStatePhilox4_32_10_t * devStates;
     dataType * samplePricesGpu;
     dataType * sampleWeightsGpu;
     dataType * timesGpu;
@@ -335,14 +335,14 @@ void runBenchmarkCudaV3(benchmark::State& state,
     sampleWeights = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
     times = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
 
-    CUDA_CALL(cudaMalloc((void **)&devStates, size * sizeof(curandStatePhilox4_32_10_t)));
-    CUDA_CALL(cudaMalloc(&samplePricesGpu, NUM_OPTIONS * size * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&sampleWeightsGpu, NUM_OPTIONS * size * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&timesGpu, NUM_OPTIONS * size * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&optionStructsGpu, NUM_OPTIONS * sizeof(monteCarloOptionStruct)));
+    HIP_CALL(hipMalloc((void **)&devStates, size * sizeof(hiprandStatePhilox4_32_10_t)));
+    HIP_CALL(hipMalloc(&samplePricesGpu, NUM_OPTIONS * size * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&sampleWeightsGpu, NUM_OPTIONS * size * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&timesGpu, NUM_OPTIONS * size * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&optionStructsGpu, NUM_OPTIONS * sizeof(monteCarloOptionStruct)));
 
-    CUDA_CALL(cudaMemcpy(optionStructsGpu, optionStructs, NUM_OPTIONS * sizeof(monteCarloOptionStruct), cudaMemcpyHostToDevice));
-    CUDA_CALL(cudaDeviceSynchronize());
+    HIP_CALL(hipMemcpy(optionStructsGpu, optionStructs, NUM_OPTIONS * sizeof(monteCarloOptionStruct), hipMemcpyHostToDevice));
+    HIP_CALL(hipDeviceSynchronize());
 
     dim3 grid((size_t)ceil((dataType)size / ((dataType)THREAD_BLOCK_SIZE)), 1, 1);
     dim3 threads(THREAD_BLOCK_SIZE, 1, 1);
@@ -350,26 +350,26 @@ void runBenchmarkCudaV3(benchmark::State& state,
     // Warm-up
     for(size_t i = 0; i < warmup_size; i++)
     {
-        monteCarloGpuKernel<<<grid, threads>>>(
+        hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, 0,
             samplePricesGpu, sampleWeightsGpu, timesGpu,
             (1.0f / (dataType)SEQUENCE_LENGTH), devStates, optionStructsGpu,
             seed, size
         );
-        CUDA_CALL(cudaPeekAtLastError());
-        CUDA_CALL(cudaDeviceSynchronize());
+        HIP_CALL(hipPeekAtLastError());
+        HIP_CALL(hipDeviceSynchronize());
     }
 
     for(auto _ : state)
     {
         auto start = std::chrono::high_resolution_clock::now();
 
-        monteCarloGpuKernel<<<grid, threads>>>(
+        hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, 0,
             samplePricesGpu, sampleWeightsGpu, timesGpu,
             (1.0f / (dataType)SEQUENCE_LENGTH), devStates, optionStructsGpu,
             seed, size
         );
-        CUDA_CALL(cudaPeekAtLastError());
-        CUDA_CALL(cudaDeviceSynchronize());
+        HIP_CALL(hipPeekAtLastError());
+        HIP_CALL(hipDeviceSynchronize());
 
         auto end = std::chrono::high_resolution_clock::now();
         auto elapsed_seconds =
@@ -377,11 +377,11 @@ void runBenchmarkCudaV3(benchmark::State& state,
         state.SetIterationTime(elapsed_seconds.count());
     }
 
-    CUDA_CALL(cudaFree(devStates));
-    CUDA_CALL(cudaFree(samplePricesGpu));
-    CUDA_CALL(cudaFree(sampleWeightsGpu));
-    CUDA_CALL(cudaFree(timesGpu));
-    CUDA_CALL(cudaFree(optionStructsGpu));
+    HIP_CALL(hipFree(devStates));
+    HIP_CALL(hipFree(samplePricesGpu));
+    HIP_CALL(hipFree(sampleWeightsGpu));
+    HIP_CALL(hipFree(timesGpu));
+    HIP_CALL(hipFree(optionStructsGpu));
 
     free(samplePrices);
     free(sampleWeights);
@@ -389,7 +389,7 @@ void runBenchmarkCudaV3(benchmark::State& state,
     free(optionStructs);
 }
 
-void runBenchmarkCudaV4(benchmark::State& state,
+void runBenchmarkHipV4(benchmark::State& state,
                         int seed,
                         size_t size)
 {
@@ -401,7 +401,7 @@ void runBenchmarkCudaV4(benchmark::State& state,
     dataType * sampleWeights;
     dataType * times;
 
-    curandStatePhilox4_32_10_t * devStates;
+    hiprandStatePhilox4_32_10_t * devStates;
     dataType * samplePricesGpu;
     dataType * sampleWeightsGpu;
     dataType * timesGpu;
@@ -412,11 +412,11 @@ void runBenchmarkCudaV4(benchmark::State& state,
     sampleWeights = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
     times = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
 
-    CUDA_CALL(cudaMalloc((void **)&devStates, size * sizeof(curandStatePhilox4_32_10_t)));
-    CUDA_CALL(cudaMalloc(&samplePricesGpu, NUM_OPTIONS * size * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&sampleWeightsGpu, NUM_OPTIONS * size * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&timesGpu, NUM_OPTIONS * size * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&optionStructsGpu, NUM_OPTIONS * sizeof(monteCarloOptionStruct)));
+    HIP_CALL(hipMalloc((void **)&devStates, size * sizeof(hiprandStatePhilox4_32_10_t)));
+    HIP_CALL(hipMalloc(&samplePricesGpu, NUM_OPTIONS * size * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&sampleWeightsGpu, NUM_OPTIONS * size * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&timesGpu, NUM_OPTIONS * size * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&optionStructsGpu, NUM_OPTIONS * sizeof(monteCarloOptionStruct)));
 
     dim3 grid((size_t)ceil((dataType)size / ((dataType)THREAD_BLOCK_SIZE)), 1, 1);
     dim3 threads(THREAD_BLOCK_SIZE, 1, 1);
@@ -424,32 +424,32 @@ void runBenchmarkCudaV4(benchmark::State& state,
     // Warm-up
     for(size_t i = 0; i < warmup_size; i++)
     {
-        monteCarloGpuKernel<<<grid, threads>>>(
+        hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, 0,
             samplePricesGpu, sampleWeightsGpu, timesGpu,
             (1.0f / (dataType)SEQUENCE_LENGTH), devStates, optionStructsGpu,
             seed, size
         );
-        CUDA_CALL(cudaPeekAtLastError());
-        CUDA_CALL(cudaDeviceSynchronize());
+        HIP_CALL(hipPeekAtLastError());
+        HIP_CALL(hipDeviceSynchronize());
     }
 
     for(auto _ : state)
     {
         auto start = std::chrono::high_resolution_clock::now();
 
-        CUDA_CALL(cudaMemcpy(optionStructsGpu, optionStructs, NUM_OPTIONS * sizeof(monteCarloOptionStruct), cudaMemcpyHostToDevice));
+        HIP_CALL(hipMemcpy(optionStructsGpu, optionStructs, NUM_OPTIONS * sizeof(monteCarloOptionStruct), hipMemcpyHostToDevice));
 
-        monteCarloGpuKernel<<<grid, threads>>>(
+        hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, 0,
             samplePricesGpu, sampleWeightsGpu, timesGpu,
             (1.0f / (dataType)SEQUENCE_LENGTH), devStates, optionStructsGpu,
             seed, size
         );
-        CUDA_CALL(cudaPeekAtLastError());
+        HIP_CALL(hipPeekAtLastError());
 
-        CUDA_CALL(cudaMemcpy(samplePrices, samplePricesGpu, size * sizeof(dataType), cudaMemcpyDeviceToHost));
-        CUDA_CALL(cudaMemcpy(sampleWeights, sampleWeightsGpu, size * sizeof(dataType), cudaMemcpyDeviceToHost));
-        CUDA_CALL(cudaMemcpy(times, timesGpu, size * sizeof(dataType), cudaMemcpyDeviceToHost));
-        CUDA_CALL(cudaDeviceSynchronize());
+        HIP_CALL(hipMemcpy(samplePrices, samplePricesGpu, size * sizeof(dataType), hipMemcpyDeviceToHost));
+        HIP_CALL(hipMemcpy(sampleWeights, sampleWeightsGpu, size * sizeof(dataType), hipMemcpyDeviceToHost));
+        HIP_CALL(hipMemcpy(times, timesGpu, size * sizeof(dataType), hipMemcpyDeviceToHost));
+        HIP_CALL(hipDeviceSynchronize());
 
         auto end = std::chrono::high_resolution_clock::now();
         auto elapsed_seconds =
@@ -457,11 +457,11 @@ void runBenchmarkCudaV4(benchmark::State& state,
         state.SetIterationTime(elapsed_seconds.count());
     }
 
-    CUDA_CALL(cudaFree(devStates));
-    CUDA_CALL(cudaFree(samplePricesGpu));
-    CUDA_CALL(cudaFree(sampleWeightsGpu));
-    CUDA_CALL(cudaFree(timesGpu));
-    CUDA_CALL(cudaFree(optionStructsGpu));
+    HIP_CALL(hipFree(devStates));
+    HIP_CALL(hipFree(samplePricesGpu));
+    HIP_CALL(hipFree(sampleWeightsGpu));
+    HIP_CALL(hipFree(timesGpu));
+    HIP_CALL(hipFree(optionStructsGpu));
 
     free(samplePrices);
     free(sampleWeights);
@@ -486,15 +486,12 @@ int main(int argc, char *argv[])
     const int seed = parser.get<int>("seed");
     srand(seed);
 
-    #ifdef BUILD_CUDA
-    int runtime_version;
-    CUDA_CALL(cudaRuntimeGetVersion(&runtime_version));
+    #ifdef BUILD_HIP
     int device_id;
-    CUDA_CALL(cudaGetDevice(&device_id));
-    cudaDeviceProp props;
-    CUDA_CALL(cudaGetDeviceProperties(&props, device_id));
+    HIP_CALL(hipGetDevice(&device_id));
+    hipDeviceProp_t props;
+    HIP_CALL(hipGetDeviceProperties(&props, device_id));
 
-    std::cout << "Runtime: " << runtime_version << " ";
     std::cout << "Device: " << props.name;
     std::cout << std::endl << std::endl;
     #endif
@@ -509,22 +506,22 @@ int main(int argc, char *argv[])
             ("monteCarlo (OpenMP)"),
             [=](benchmark::State& state) { runBenchmarkOpenMP(state, seed, size); }
         ),
-        #ifdef BUILD_CUDA
+        #ifdef BUILD_HIP
         benchmark::RegisterBenchmark(
-            ("monteCarloCuda (Compute Only)"),
-            [=](benchmark::State& state) { runBenchmarkCudaV1(state, seed, size); }
+            ("monteCarloHip (Compute Only)"),
+            [=](benchmark::State& state) { runBenchmarkHipV1(state, seed, size); }
         ),
         benchmark::RegisterBenchmark(
-            ("monteCarloCuda (+ Transfers)"),
-            [=](benchmark::State& state) { runBenchmarkCudaV2(state, seed, size); }
+            ("monteCarloHip (+ Transfers)"),
+            [=](benchmark::State& state) { runBenchmarkHipV2(state, seed, size); }
         ),
         benchmark::RegisterBenchmark(
-            ("monteCarloCudaOpt (Compute Only)"),
-            [=](benchmark::State& state) { runBenchmarkCudaV3(state, seed, size); }
+            ("monteCarloHipOpt (Compute Only)"),
+            [=](benchmark::State& state) { runBenchmarkHipV3(state, seed, size); }
         ),
         benchmark::RegisterBenchmark(
-            ("monteCarloCudaOpt (+ Transfers)"),
-            [=](benchmark::State& state) { runBenchmarkCudaV4(state, seed, size); }
+            ("monteCarloHipOpt (+ Transfers)"),
+            [=](benchmark::State& state) { runBenchmarkHipV4(state, seed, size); }
         ),
         #endif
     };

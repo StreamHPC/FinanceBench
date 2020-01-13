@@ -1,35 +1,37 @@
+
 //monteCarloKernels.cuh
 //Scott Grauer-Gray
 //May 10, 2012
 //Kernel headers for running monte carlo on the GPU
 
-#ifndef MONTE_CARLO_KERNELS_CUH
-#define MONTE_CARLO_KERNELS_CUH
+#ifndef MONTE_CARLO_KERNELS_H
+#define MONTE_CARLO_KERNELS_H
+
+//needed for curand
+#include <hip/hip_runtime.h>
+#include <hiprand_kernel.h>
+#include <type_traits>
 
 //needed for constants related to monte carlo
 #include "monteCarloFuncs.h"
 
-//needed for curand
-#include <curand_kernel.h>
-#include <type_traits>
-
 //function to set up the random states
-__global__ void setup_kernel(curandState * state,
+__global__ void setup_kernel(hiprandState * state,
                              int seedVal,
                              int numSamples);
 
-template<class CurandState>
+template<class HiprandState>
 __device__ inline void getPath(dataType * path,
                                size_t sampleNum,
                                dataType dt,
-                               CurandState * state,
+                               HiprandState * state,
                                monteCarloOptionStruct optionStruct);
 
 template<>
 __device__ inline void getPath(dataType * path,
                                size_t sampleNum,
                                dataType dt,
-                               curandState * state,
+                               hiprandState * state,
                                monteCarloOptionStruct optionStruct)
 {
     path[0] = getProcessValX0(optionStruct);
@@ -37,7 +39,7 @@ __device__ inline void getPath(dataType * path,
     for(size_t i = 1; i < SEQUENCE_LENGTH; ++i)
     {
         dataType t = i * dt;
-        dataType randVal = curand_uniform(&(state[sampleNum]));
+        dataType randVal = hiprand_uniform(&(state[sampleNum]));
         dataType inverseCumRandVal = compInverseNormDist(randVal);
         path[i] = processEvolve(
                       t, path[i - 1], dt, inverseCumRandVal, optionStruct
@@ -49,7 +51,7 @@ template<>
 __device__ inline void getPath(dataType * path,
                                size_t sampleNum,
                                dataType dt,
-                               curandStatePhilox4_32_10_t * state,
+                               hiprandStatePhilox4_32_10_t * state,
                                monteCarloOptionStruct optionStruct)
 {
     path[0] = getProcessValX0(optionStruct);
@@ -59,19 +61,19 @@ __device__ inline void getPath(dataType * path,
         dataType t = i * dt;
         //dataType randVal = curand_uniform(&(state[sampleNum]));
         //dataType inverseCumRandVal = compInverseNormDist(randVal);
-        dataType inverseCumRandVal = curand_normal(&(state[sampleNum]));
+        dataType inverseCumRandVal = hiprand_normal(&(state[sampleNum]));
         path[i] = processEvolve(
                       t, path[i - 1], dt, inverseCumRandVal, optionStruct
                   );
     }
 }
 
-template<class CurandState>
+template<class HiprandState>
 __global__ void monteCarloGpuKernel(dataType * samplePrices,
                                     dataType * sampleWeights,
                                     dataType * times,
                                     dataType dt,
-                                    CurandState * state,
+                                    HiprandState * state,
                                     monteCarloOptionStruct * optionStructs,
                                     int seedVal,
                                     int numSamples)
@@ -90,9 +92,9 @@ __global__ void monteCarloGpuKernel(dataType * samplePrices,
     //while (numSample < numSamples)
     if(numSample < numSamples)
     {
-        if(std::is_same<CurandState, curandStatePhilox4_32_10_t>::value)
+        if(std::is_same<HiprandState, hiprandStatePhilox4_32_10_t>::value)
         {
-            curand_init(seedVal, numSample, 0, &(state[numSample]));
+            hiprand_init(seedVal, numSample, 0, &(state[numSample]));
         }
         //declare and initialize the path
         dataType path[SEQUENCE_LENGTH];
@@ -110,4 +112,4 @@ __global__ void monteCarloGpuKernel(dataType * samplePrices,
     }
 }
 
-#endif //MONTE_CARLO_KERNELS_CUH
+#endif //MONTE_CARLO_KERNELS_H

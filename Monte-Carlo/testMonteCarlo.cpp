@@ -11,12 +11,12 @@
 #include <gtest/gtest.h>
 
 #include "monteCarloKernelsCpu.h"
-#ifdef BUILD_CUDA
-#include "monteCarloKernels.cuh"
-#include <cuda_runtime.h>
+#ifdef BUILD_HIP
+#include "monteCarloKernels.h"
+#include <hip/hip_runtime.h>
 
-#define CUDA_CALL(error)         \
-    ASSERT_EQ(static_cast<cudaError_t>(error),cudaSuccess)
+#define HIP_CALL(error)         \
+    ASSERT_EQ(static_cast<hipError_t>(error),hipSuccess)
 #endif
 
 #define RISK_VAL 0.06f
@@ -26,23 +26,21 @@
 #define STRIKE_VAL 40.0f
 #define DISCOUNT_VAL 0.94176453358424872f
 
+void initOptions(monteCarloOptionStruct * optionStructs)
+{
+    monteCarloOptionStruct optionStruct;
+    optionStruct.riskVal = RISK_VAL;
+    optionStruct.divVal = DIV_VAL;
+    optionStruct.voltVal = VOLT_VAL;
+    optionStruct.underlyingVal = UNDERLYING_VAL;
+    optionStruct.strikeVal = STRIKE_VAL;
+    optionStruct.discountVal = DISCOUNT_VAL;
 
-
-    void initOptions(monteCarloOptionStruct * optionStructs)
+    for(int optNum = 0; optNum < NUM_OPTIONS; ++optNum)
     {
-        monteCarloOptionStruct optionStruct;
-        optionStruct.riskVal = RISK_VAL;
-        optionStruct.divVal = DIV_VAL;
-        optionStruct.voltVal = VOLT_VAL;
-        optionStruct.underlyingVal = UNDERLYING_VAL;
-        optionStruct.strikeVal = STRIKE_VAL;
-        optionStruct.discountVal = DISCOUNT_VAL;
-
-        for(int optNum = 0; optNum < NUM_OPTIONS; ++optNum)
-        {
-            optionStructs[optNum] = optionStruct;
-        }
+        optionStructs[optNum] = optionStruct;
     }
+}
 
 TEST(MonteCarlo, OpenMP)
 {
@@ -97,8 +95,8 @@ TEST(MonteCarlo, OpenMP)
     free(optionStructs);
 }
 
-#ifdef BUILD_CUDA
-TEST(MonteCarlo, Cuda)
+#ifdef BUILD_HIP
+TEST(MonteCarlo, Hip)
 {
     const int size = 1024;
     const int seed = 123;
@@ -113,7 +111,7 @@ TEST(MonteCarlo, Cuda)
     dataType * sampleWeights;
     dataType * times;
 
-    curandState * devStates;
+    hiprandState * devStates;
     dataType * samplePricesGpu;
     dataType * sampleWeightsGpu;
     dataType * timesGpu;
@@ -130,30 +128,30 @@ TEST(MonteCarlo, Cuda)
         seed, size
     );
 
-    CUDA_CALL(cudaMalloc((void **)&devStates, size * sizeof(curandState)));
-    CUDA_CALL(cudaMalloc(&samplePricesGpu, NUM_OPTIONS * size * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&sampleWeightsGpu, NUM_OPTIONS * size * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&timesGpu, NUM_OPTIONS * size * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&optionStructsGpu, NUM_OPTIONS * sizeof(monteCarloOptionStruct)));
+    HIP_CALL(hipMalloc((void **)&devStates, size * sizeof(hiprandState)));
+    HIP_CALL(hipMalloc(&samplePricesGpu, NUM_OPTIONS * size * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&sampleWeightsGpu, NUM_OPTIONS * size * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&timesGpu, NUM_OPTIONS * size * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&optionStructsGpu, NUM_OPTIONS * sizeof(monteCarloOptionStruct)));
 
     dim3 grid((size_t)ceil((dataType)size / ((dataType)THREAD_BLOCK_SIZE)), 1, 1);
     dim3 threads(THREAD_BLOCK_SIZE, 1, 1);
 
-    CUDA_CALL(cudaMemcpy(optionStructsGpu, optionStructs, NUM_OPTIONS * sizeof(monteCarloOptionStruct), cudaMemcpyHostToDevice));
+    HIP_CALL(hipMemcpy(optionStructsGpu, optionStructs, NUM_OPTIONS * sizeof(monteCarloOptionStruct), hipMemcpyHostToDevice));
 
-    setup_kernel<<<grid, threads>>>(devStates, seed, size);
-    CUDA_CALL(cudaPeekAtLastError());
-    monteCarloGpuKernel<<<grid, threads>>>(
+    hipLaunchKernelGGL((setup_kernel), dim3(grid), dim3(threads), 0, 0, devStates, seed, size);
+    HIP_CALL(hipPeekAtLastError());
+    hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, 0,
         samplePricesGpu, sampleWeightsGpu, timesGpu,
         (1.0f / (dataType)SEQUENCE_LENGTH), devStates, optionStructsGpu,
         seed, size
     );
-    CUDA_CALL(cudaPeekAtLastError());
+    HIP_CALL(hipPeekAtLastError());
 
-    CUDA_CALL(cudaMemcpy(samplePricesCpu, samplePricesGpu, size * sizeof(dataType), cudaMemcpyDeviceToHost));
-    CUDA_CALL(cudaMemcpy(sampleWeights, sampleWeightsGpu, size * sizeof(dataType), cudaMemcpyDeviceToHost));
-    CUDA_CALL(cudaMemcpy(times, timesGpu, size * sizeof(dataType), cudaMemcpyDeviceToHost));
-    CUDA_CALL(cudaDeviceSynchronize());
+    HIP_CALL(hipMemcpy(samplePricesCpu, samplePricesGpu, size * sizeof(dataType), hipMemcpyDeviceToHost));
+    HIP_CALL(hipMemcpy(sampleWeights, sampleWeightsGpu, size * sizeof(dataType), hipMemcpyDeviceToHost));
+    HIP_CALL(hipMemcpy(times, timesGpu, size * sizeof(dataType), hipMemcpyDeviceToHost));
+    HIP_CALL(hipDeviceSynchronize());
 
     dataType cumPriceCpu = 0.0f;
     dataType cumPriceMp = 0.0f;
@@ -169,11 +167,11 @@ TEST(MonteCarlo, Cuda)
 
     ASSERT_NEAR(cumPriceCpu, cumPriceMp, 0.5f);
 
-    CUDA_CALL(cudaFree(devStates));
-    CUDA_CALL(cudaFree(samplePricesGpu));
-    CUDA_CALL(cudaFree(sampleWeightsGpu));
-    CUDA_CALL(cudaFree(timesGpu));
-    CUDA_CALL(cudaFree(optionStructsGpu));
+    HIP_CALL(hipFree(devStates));
+    HIP_CALL(hipFree(samplePricesGpu));
+    HIP_CALL(hipFree(sampleWeightsGpu));
+    HIP_CALL(hipFree(timesGpu));
+    HIP_CALL(hipFree(optionStructsGpu));
 
     free(samplePricesCpu);
     free(samplePricesMp);
@@ -182,7 +180,7 @@ TEST(MonteCarlo, Cuda)
     free(optionStructs);
 }
 
-TEST(MonteCarlo, CudaOpt)
+TEST(MonteCarlo, HipOpt)
 {
     const int size = 1024;
     const int seed = 123;
@@ -197,7 +195,7 @@ TEST(MonteCarlo, CudaOpt)
     dataType * sampleWeights;
     dataType * times;
 
-    curandStatePhilox4_32_10_t * devStates;
+    hiprandStatePhilox4_32_10_t * devStates;
     dataType * samplePricesGpu;
     dataType * sampleWeightsGpu;
     dataType * timesGpu;
@@ -214,28 +212,28 @@ TEST(MonteCarlo, CudaOpt)
         seed, size
     );
 
-    CUDA_CALL(cudaMalloc((void **)&devStates, size * sizeof(curandStatePhilox4_32_10_t)));
-    CUDA_CALL(cudaMalloc(&samplePricesGpu, NUM_OPTIONS * size * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&sampleWeightsGpu, NUM_OPTIONS * size * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&timesGpu, NUM_OPTIONS * size * sizeof(dataType)));
-    CUDA_CALL(cudaMalloc(&optionStructsGpu, NUM_OPTIONS * sizeof(monteCarloOptionStruct)));
+    HIP_CALL(hipMalloc((void **)&devStates, size * sizeof(hiprandStatePhilox4_32_10_t)));
+    HIP_CALL(hipMalloc(&samplePricesGpu, NUM_OPTIONS * size * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&sampleWeightsGpu, NUM_OPTIONS * size * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&timesGpu, NUM_OPTIONS * size * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&optionStructsGpu, NUM_OPTIONS * sizeof(monteCarloOptionStruct)));
 
     dim3 grid((size_t)ceil((dataType)size / ((dataType)THREAD_BLOCK_SIZE)), 1, 1);
     dim3 threads(THREAD_BLOCK_SIZE, 1, 1);
 
-    CUDA_CALL(cudaMemcpy(optionStructsGpu, optionStructs, NUM_OPTIONS * sizeof(monteCarloOptionStruct), cudaMemcpyHostToDevice));
+    HIP_CALL(hipMemcpy(optionStructsGpu, optionStructs, NUM_OPTIONS * sizeof(monteCarloOptionStruct), hipMemcpyHostToDevice));
 
-    monteCarloGpuKernel<<<grid, threads>>>(
+    hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, 0,
         samplePricesGpu, sampleWeightsGpu, timesGpu,
         (1.0f / (dataType)SEQUENCE_LENGTH), devStates, optionStructsGpu,
         seed, size
     );
-    CUDA_CALL(cudaPeekAtLastError());
+    HIP_CALL(hipPeekAtLastError());
 
-    CUDA_CALL(cudaMemcpy(samplePricesCpu, samplePricesGpu, size * sizeof(dataType), cudaMemcpyDeviceToHost));
-    CUDA_CALL(cudaMemcpy(sampleWeights, sampleWeightsGpu, size * sizeof(dataType), cudaMemcpyDeviceToHost));
-    CUDA_CALL(cudaMemcpy(times, timesGpu, size * sizeof(dataType), cudaMemcpyDeviceToHost));
-    CUDA_CALL(cudaDeviceSynchronize());
+    HIP_CALL(hipMemcpy(samplePricesCpu, samplePricesGpu, size * sizeof(dataType), hipMemcpyDeviceToHost));
+    HIP_CALL(hipMemcpy(sampleWeights, sampleWeightsGpu, size * sizeof(dataType), hipMemcpyDeviceToHost));
+    HIP_CALL(hipMemcpy(times, timesGpu, size * sizeof(dataType), hipMemcpyDeviceToHost));
+    HIP_CALL(hipDeviceSynchronize());
 
     dataType cumPriceCpu = 0.0f;
     dataType cumPriceMp = 0.0f;
@@ -251,11 +249,11 @@ TEST(MonteCarlo, CudaOpt)
 
     ASSERT_NEAR(cumPriceCpu, cumPriceMp, 0.5f);
 
-    CUDA_CALL(cudaFree(devStates));
-    CUDA_CALL(cudaFree(samplePricesGpu));
-    CUDA_CALL(cudaFree(sampleWeightsGpu));
-    CUDA_CALL(cudaFree(timesGpu));
-    CUDA_CALL(cudaFree(optionStructsGpu));
+    HIP_CALL(hipFree(devStates));
+    HIP_CALL(hipFree(samplePricesGpu));
+    HIP_CALL(hipFree(sampleWeightsGpu));
+    HIP_CALL(hipFree(timesGpu));
+    HIP_CALL(hipFree(optionStructsGpu));
 
     free(samplePricesCpu);
     free(samplePricesMp);

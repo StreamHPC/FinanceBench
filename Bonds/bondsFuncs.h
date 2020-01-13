@@ -8,9 +8,9 @@
 #include "bondsStructs.h"
 #include <stdbool.h>
 
-#ifdef __NVCC__
+#if defined(__HIPCC__) || defined(__NVCC__)
     #define HOST_DEVICE __host__ __device__ inline
-    #ifdef __CUDA_ARCH__
+    #ifdef __HIP_DEVICE_COMPILE__
         #define DEVICE __device__
     #else
         #define DEVICE

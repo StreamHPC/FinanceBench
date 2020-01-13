@@ -11,16 +11,15 @@
 #include <gtest/gtest.h>
 
 #include "blackScholesAnalyticEngineKernelsCpu.h"
-#ifdef BUILD_CUDA
-#include "blackScholesAnalyticEngineKernels.cuh"
-#include <cuda_runtime.h>
+#ifdef BUILD_HIP
+#include "blackScholesAnalyticEngineKernels.h"
+#include <hip/hip_runtime.h>
 
-#define CUDA_CALL(error)         \
-    ASSERT_EQ(static_cast<cudaError_t>(error),cudaSuccess)
+#define HIP_CALL(error)         \
+    ASSERT_EQ(static_cast<hipError_t>(error),hipSuccess)
 #endif
 
 #define NUM_DIFF_SETTINGS 37
-
 
 void initOptions(optionInputStruct * values,
                  int numVals)
@@ -238,8 +237,8 @@ TEST(BlackScholes, OpenMP)
     free(outputMp);
 }
 
-#ifdef BUILD_CUDA
-TEST(BlackScholes, Cuda)
+#ifdef BUILD_HIP
+TEST(BlackScholes, Hip)
 {
     int numVals = 1024;
     optionInputStruct * values = new optionInputStruct[numVals];
@@ -253,32 +252,32 @@ TEST(BlackScholes, Cuda)
 
     getOutValOptionCpu(values, outputCpu, numVals);
 
-    CUDA_CALL(cudaMalloc(&optionsGpu, numVals * sizeof(optionInputStruct)));
-    CUDA_CALL(cudaMalloc(&outputValsGpu, numVals * sizeof(float)));
+    HIP_CALL(hipMalloc(&optionsGpu, numVals * sizeof(optionInputStruct)));
+    HIP_CALL(hipMalloc(&outputValsGpu, numVals * sizeof(float)));
 
     dim3 grid((size_t)ceil((float)numVals / (float)THREAD_BLOCK_SIZE), 1, 1);
     dim3 threads(THREAD_BLOCK_SIZE, 1, 1);
 
-    CUDA_CALL(cudaMemcpy(optionsGpu, values, numVals * sizeof(optionInputStruct), cudaMemcpyHostToDevice));
-    getOutValOption<<<grid, threads>>>(optionsGpu, outputValsGpu, numVals);
-    CUDA_CALL(cudaPeekAtLastError());
-    CUDA_CALL(cudaMemcpy(outputGpu, outputValsGpu, numVals * sizeof(float), cudaMemcpyDeviceToHost));
-    CUDA_CALL(cudaDeviceSynchronize());
+    HIP_CALL(hipMemcpy(optionsGpu, values, numVals * sizeof(optionInputStruct), hipMemcpyHostToDevice));
+    hipLaunchKernelGGL((getOutValOption), dim3(grid), dim3(threads), 0, 0, optionsGpu, outputValsGpu, numVals);
+    HIP_CALL(hipPeekAtLastError());
+    HIP_CALL(hipMemcpy(outputGpu, outputValsGpu, numVals * sizeof(float), hipMemcpyDeviceToHost));
+    HIP_CALL(hipDeviceSynchronize());
 
     for(int i = 0; i < numVals; ++i)
     {
         ASSERT_NEAR(outputCpu[i], outputGpu[i], 0.001f) << "where index = " << i;;
     }
 
-    CUDA_CALL(cudaFree(optionsGpu));
-    CUDA_CALL(cudaFree(outputValsGpu));
+    HIP_CALL(hipFree(optionsGpu));
+    HIP_CALL(hipFree(outputValsGpu));
 
     delete [] values;
     free(outputCpu);
     free(outputGpu);
 }
 
-TEST(BlackScholes, CudaOpt)
+TEST(BlackScholes, HipOpt)
 {
     int numVals = 1024;
     optionInputStruct * values = new optionInputStruct[numVals];
@@ -292,25 +291,25 @@ TEST(BlackScholes, CudaOpt)
 
     getOutValOptionCpu(values, outputCpu, numVals);
 
-    CUDA_CALL(cudaMalloc(&optionsGpu, numVals * sizeof(optionInputStruct)));
-    CUDA_CALL(cudaMalloc(&outputValsGpu, numVals * sizeof(float)));
+    HIP_CALL(hipMalloc(&optionsGpu, numVals * sizeof(optionInputStruct)));
+    HIP_CALL(hipMalloc(&outputValsGpu, numVals * sizeof(float)));
 
     dim3 grid((size_t)ceil((float)numVals / (float)THREAD_BLOCK_SIZE), 1, 1);
     dim3 threads(THREAD_BLOCK_SIZE, 1, 1);
 
-    CUDA_CALL(cudaMemcpy(optionsGpu, values, numVals * sizeof(optionInputStruct), cudaMemcpyHostToDevice));
-    getOutValOptionOpt<<<grid, threads>>>(optionsGpu, outputValsGpu, numVals);
-    CUDA_CALL(cudaPeekAtLastError());
-    CUDA_CALL(cudaMemcpy(outputGpu, outputValsGpu, numVals * sizeof(float), cudaMemcpyDeviceToHost));
-    CUDA_CALL(cudaDeviceSynchronize());
+    HIP_CALL(hipMemcpy(optionsGpu, values, numVals * sizeof(optionInputStruct), hipMemcpyHostToDevice));
+    hipLaunchKernelGGL((getOutValOptionOpt), dim3(grid), dim3(threads), 0, 0, optionsGpu, outputValsGpu, numVals);
+    HIP_CALL(hipPeekAtLastError());
+    HIP_CALL(hipMemcpy(outputGpu, outputValsGpu, numVals * sizeof(float), hipMemcpyDeviceToHost));
+    HIP_CALL(hipDeviceSynchronize());
 
     for(int i = 0; i < numVals; ++i)
     {
         ASSERT_NEAR(outputCpu[i], outputGpu[i], 0.001f) << "where index = " << i;;
     }
 
-    CUDA_CALL(cudaFree(optionsGpu));
-    CUDA_CALL(cudaFree(outputValsGpu));
+    HIP_CALL(hipFree(optionsGpu));
+    HIP_CALL(hipFree(outputValsGpu));
 
     delete [] values;
     free(outputCpu);

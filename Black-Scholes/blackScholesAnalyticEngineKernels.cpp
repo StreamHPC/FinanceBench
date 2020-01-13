@@ -3,7 +3,7 @@
 //Kernels for running black scholes using the analytic engine
 
 //declarations for the kernels
-#include "blackScholesAnalyticEngineKernels.cuh"
+#include "blackScholesAnalyticEngineKernels.h"
 
 //needed for the constants in the error function
 //#include "errorFunctConsts.h"
