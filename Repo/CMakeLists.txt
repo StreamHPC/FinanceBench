@@ -37,6 +37,12 @@ if(BUILD_HIP)
         set_property(TARGET repoHip PROPERTY CUDA_STANDARD 11)
         set_source_files_properties(repoKernels.cpp PROPERTIES LANGUAGE CUDA)
     endif()
+    if(HIP_PLATFORM STREQUAL "hcc")
+        target_link_libraries(repoHip hip::device)
+        foreach(amdgpu_target ${AMDGPU_TARGETS})
+            target_link_libraries(repoHip --amdgpu-target=${amdgpu_target})
+        endforeach()
+    endif()
     target_include_directories(repoHip SYSTEM BEFORE
       PUBLIC
         /opt/rocm/include

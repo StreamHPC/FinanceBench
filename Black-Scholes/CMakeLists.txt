@@ -37,6 +37,12 @@ if(BUILD_HIP)
         set_property(TARGET blackScholesHip PROPERTY CUDA_STANDARD 11)
         set_source_files_properties(blackScholesAnalyticEngineKernels.cpp PROPERTIES LANGUAGE CUDA)
     endif()
+    if(HIP_PLATFORM STREQUAL "hcc")
+        target_link_libraries(blackScholesHip hip::device)
+        foreach(amdgpu_target ${AMDGPU_TARGETS})
+            target_link_libraries(blackScholesHip --amdgpu-target=${amdgpu_target})
+        endforeach()
+    endif()
     target_include_directories(blackScholesHip SYSTEM BEFORE
       PUBLIC
         /opt/rocm/include

@@ -37,11 +37,18 @@ if(BUILD_HIP)
         set_property(TARGET monteCarloHip PROPERTY CUDA_STANDARD 11)
         set_source_files_properties(monteCarloKernels.cpp PROPERTIES LANGUAGE CUDA)
     endif()
+    if(HIP_PLATFORM STREQUAL "hcc")
+        target_link_libraries(monteCarloHip hip::device)
+        foreach(amdgpu_target ${AMDGPU_TARGETS})
+            target_link_libraries(monteCarloHip --amdgpu-target=${amdgpu_target})
+        endforeach()
+    endif()
     target_include_directories(monteCarloHip SYSTEM BEFORE
       PUBLIC
         /opt/rocm/include
         /opt/rocm/hiprand/include
         /opt/rocm/hiprand/include/hiprand
+        /opt/rocm/rocrand/include
     )
     #target_link_libraries(monteCarlo monteCarloCuda)
     #set_source_files_properties(monteCarloEngine.cpp PROPERTIES LANGUAGE CUDA)

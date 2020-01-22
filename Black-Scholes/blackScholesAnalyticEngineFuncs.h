@@ -14,7 +14,7 @@
 //needed for the constants in the error function
 #include "errorFunctConsts.h"
 
-#if defined(__HIPCC__) || defined(__NVCC__)
+#if defined(__HIP_DEVICE_COMPILE__)
     #define HOST_DEVICE __host__ __device__ inline
 #else
     #define HOST_DEVICE inline

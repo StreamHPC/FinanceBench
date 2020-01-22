@@ -7,13 +7,9 @@
 
 #include "repoStructs.h"
 
-#if defined(__HIPCC__) || defined(__NVCC__)
+#if defined(__HIP_DEVICE_COMPILE__)
     #define HOST_DEVICE __host__ __device__ inline
-    #ifdef __HIP_DEVICE_COMPILE__
-        #define DEVICE __device__
-    #else
-        #define DEVICE
-    #endif
+    #define DEVICE __device__
 #else
     #define HOST_DEVICE inline
     #define DEVICE

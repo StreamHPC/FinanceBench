@@ -10,13 +10,19 @@
 #include "monteCarloStructs.h"
 #include <math.h>
 
-#if defined(__HIPCC__) || defined(__NVCC__)
+#if defined(__NVCC__)
     #define HOST_DEVICE __host__ __device__ inline
+#elif defined(__HCC__)
+    #if defined(__HIP_DEVICE_COMPILE__)
+        #define HOST_DEVICE __device__ inline
+    #else
+        #define HOST_DEVICE inline
+    #endif
 #else
     #define HOST_DEVICE inline
 #endif
 
-#define max(a,b) \
+#define mmax(a,b) \
    ({ __typeof__ (a) _a = (a); \
        __typeof__ (b) _b = (b); \
      _a > _b ? _a : _b; })
@@ -182,7 +188,7 @@ HOST_DEVICE dataType getProcessValX0(monteCarloOptionStruct optionStruct)
 
 HOST_DEVICE dataType getPrice(dataType val)
 {
-    return max(STRIKE_VAL - val, 0.0f) * DISCOUNT_VAL;
+    return mmax(STRIKE_VAL - val, 0.0f) * DISCOUNT_VAL;
 }
 
 //initialize the path

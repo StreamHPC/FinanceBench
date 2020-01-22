@@ -37,6 +37,12 @@ if(BUILD_HIP)
         set_property(TARGET bondsHip PROPERTY CUDA_STANDARD 11)
         set_source_files_properties(bondsKernelsGpu.cpp PROPERTIES LANGUAGE CUDA)
     endif()
+    if(HIP_PLATFORM STREQUAL "hcc")
+        target_link_libraries(bondsHip hip::device)
+        foreach(amdgpu_target ${AMDGPU_TARGETS})
+            target_link_libraries(bondsHip --amdgpu-target=${amdgpu_target})
+        endforeach()
+    endif()
     target_include_directories(bondsHip SYSTEM BEFORE
       PUBLIC
         /opt/rocm/include
