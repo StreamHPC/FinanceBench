@@ -198,7 +198,7 @@ TEST(MonteCarlo, HipOpt)
     #if defined(__NVCC__)
     hiprandStatePhilox4_32_10_t * devStates;
     #else
-    hiprandStatePhilox4_32_10_t * devStates;
+    hiprandState * devStates;
     #endif
     dataType * samplePricesGpu;
     dataType * sampleWeightsGpu;
@@ -219,7 +219,7 @@ TEST(MonteCarlo, HipOpt)
     #if defined(__NVCC__)
     HIP_CALL(hipMalloc((void **)&devStates, size * sizeof(hiprandStatePhilox4_32_10_t)));
     #else
-    HIP_CALL(hipMalloc((void **)&devStates, size * sizeof(hiprandStatePhilox4_32_10_t)));
+    HIP_CALL(hipMalloc((void **)&devStates, size * sizeof(hiprandState)));
     #endif
     HIP_CALL(hipMalloc(&samplePricesGpu, NUM_OPTIONS * size * sizeof(dataType)));
     HIP_CALL(hipMalloc(&sampleWeightsGpu, NUM_OPTIONS * size * sizeof(dataType)));

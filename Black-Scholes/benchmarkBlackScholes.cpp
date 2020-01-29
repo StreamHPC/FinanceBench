@@ -490,20 +490,23 @@ int main(int argc, char *argv[])
 
     parser.set_optional<size_t>("size", "size", DEFAULT_N, "number of values");
     parser.set_optional<int>("trials", "trials", 10, "number of iterations");
+    parser.set_optional<int>("device_id", "device_id", 0, "ID of GPU to run");
+    parser.set_optional<bool>("run_cpu", "run_cpu", false, "Run single-threaded CPU version (slow)");
     parser.run_and_exit_if_error();
 
     // Parse argv
     benchmark::Initialize(&argc, argv);
     const size_t size = parser.get<size_t>("size");
     const int trials = parser.get<int>("trials");
+    const int device_id = parser.get<int>("device_id");
+    const bool run_cpu = parser.get<bool>("run_cpu");
 
     #ifdef BUILD_HIP
-    //int runtime_version;
-    //HIP_CALL(cudaRuntimeGetVersion(&runtime_version));
-    int device_id;
-    HIP_CALL(hipGetDevice(&device_id));
+    //int device_id;
+    //HIP_CALL(hipGetDevice(&device_id));
     hipDeviceProp_t props;
     HIP_CALL(hipGetDeviceProperties(&props, device_id));
+    HIP_CALL(hipSetDevice(device_id));
 
     //std::cout << "Runtime: " << runtime_version << " ";
     std::cout << "Device: " << props.name;
@@ -512,10 +515,6 @@ int main(int argc, char *argv[])
 
     std::vector<benchmark::internal::Benchmark*> benchmarks =
     {
-        benchmark::RegisterBenchmark(
-            ("blackScholes (CPU)"),
-            [=](benchmark::State& state) { runBenchmarkCpu(state, size); }
-        ),
         benchmark::RegisterBenchmark(
             ("blackScholes (OpenMP)"),
             [=](benchmark::State& state) { runBenchmarkOpenMP(state, size); }
@@ -539,6 +538,17 @@ int main(int argc, char *argv[])
         ),
         #endif
     };
+
+    if(run_cpu)
+    {
+        benchmarks.insert(
+            benchmarks.begin(),
+            benchmark::RegisterBenchmark(
+            ("blackScholes (CPU)"),
+            [=](benchmark::State& state) { runBenchmarkCpu(state, size); }
+            )
+        );
+    }
 
     for(auto& b : benchmarks)
     {

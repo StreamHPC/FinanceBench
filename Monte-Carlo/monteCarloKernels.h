@@ -28,21 +28,23 @@ __device__ inline void getPath(dataType * path,
                                monteCarloOptionStruct optionStruct);*/
 
 //template<>
-__device__ inline void getPath(dataType * path,
-                               size_t sampleNum,
-                               dataType dt,
-                               hiprandState * state,
-                               monteCarloOptionStruct optionStruct);
+__device__ inline void getPathV1(dataType * path,
+                                 size_t sampleNum,
+                                 dataType dt,
+                                 hiprandState * state,
+                                 monteCarloOptionStruct optionStruct);
+
+__device__ inline void getPathV2(dataType * path,
+                                size_t sampleNum,
+                                dataType dt,
+                                hiprandState * state,
+                                monteCarloOptionStruct optionStruct);
 
 //template<>
 __device__ inline void getPath(dataType * path,
                                size_t sampleNum,
                                dataType dt,
-                               #if defined(__NVCC__)
                                hiprandStatePhilox4_32_10_t * state,
-                               #else
-
-                               #endif
                                monteCarloOptionStruct optionStruct);
 
 __global__ void monteCarloGpuKernel(dataType * samplePrices,
@@ -58,11 +60,7 @@ __global__ void monteCarloGpuKernel(dataType * samplePrices,
                                     dataType * sampleWeights,
                                     dataType * times,
                                     dataType dt,
-                                    #if defined(__NVCC__)
                                     hiprandStatePhilox4_32_10_t * state,
-                                    #else
-
-                                    #endif
                                     monteCarloOptionStruct * optionStructs,
                                     int seedVal,
                                     int numSamples);

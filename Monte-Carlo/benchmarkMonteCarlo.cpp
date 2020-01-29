@@ -327,7 +327,7 @@ void runBenchmarkHipV3(benchmark::State& state,
     #if defined(__NVCC__)
     hiprandStatePhilox4_32_10_t * devStates;
     #else
-    hiprandStatePhilox4_32_10_t * devStates;
+    hiprandState * devStates;
     #endif
     dataType * samplePricesGpu;
     dataType * sampleWeightsGpu;
@@ -342,7 +342,7 @@ void runBenchmarkHipV3(benchmark::State& state,
     #if defined(__NVCC__)
     HIP_CALL(hipMalloc((void **)&devStates, size * sizeof(hiprandStatePhilox4_32_10_t)));
     #else
-    HIP_CALL(hipMalloc((void **)&devStates, size * sizeof(hiprandStatePhilox4_32_10_t)));
+    HIP_CALL(hipMalloc((void **)&devStates, size * sizeof(hiprandState)));
     #endif
     HIP_CALL(hipMalloc(&samplePricesGpu, NUM_OPTIONS * size * sizeof(dataType)));
     HIP_CALL(hipMalloc(&sampleWeightsGpu, NUM_OPTIONS * size * sizeof(dataType)));
@@ -412,7 +412,7 @@ void runBenchmarkHipV4(benchmark::State& state,
     #if defined(__NVCC__)
     hiprandStatePhilox4_32_10_t * devStates;
     #else
-    hiprandStatePhilox4_32_10_t * devStates;
+    hiprandState * devStates;
     #endif
     dataType * samplePricesGpu;
     dataType * sampleWeightsGpu;
@@ -427,7 +427,7 @@ void runBenchmarkHipV4(benchmark::State& state,
     #if defined(__NVCC__)
     HIP_CALL(hipMalloc((void **)&devStates, size * sizeof(hiprandStatePhilox4_32_10_t)));
     #else
-    HIP_CALL(hipMalloc((void **)&devStates, size * sizeof(hiprandStatePhilox4_32_10_t)));
+    HIP_CALL(hipMalloc((void **)&devStates, size * sizeof(hiprandState)));
     #endif
     HIP_CALL(hipMalloc(&samplePricesGpu, NUM_OPTIONS * size * sizeof(dataType)));
     HIP_CALL(hipMalloc(&sampleWeightsGpu, NUM_OPTIONS * size * sizeof(dataType)));
@@ -493,6 +493,8 @@ int main(int argc, char *argv[])
     parser.set_optional<size_t>("size", "size", DEFAULT_N, "number of values");
     parser.set_optional<int>("trials", "trials", 10, "number of iterations");
     parser.set_optional<int>("seed", "seed", 123, "seed for RNG");
+    parser.set_optional<int>("device_id", "device_id", 0, "ID of GPU to run");
+    parser.set_optional<bool>("run_cpu", "run_cpu", false, "Run single-threaded CPU version (slow)");
     parser.run_and_exit_if_error();
 
     // Parse argv
@@ -500,13 +502,16 @@ int main(int argc, char *argv[])
     const size_t size = parser.get<size_t>("size");
     const int trials = parser.get<int>("trials");
     const int seed = parser.get<int>("seed");
+    const int device_id = parser.get<int>("device_id");
+    const bool run_cpu = parser.get<bool>("run_cpu");
     srand(seed);
 
     #ifdef BUILD_HIP
-    int device_id;
-    HIP_CALL(hipGetDevice(&device_id));
+    //int device_id;
+    //HIP_CALL(hipGetDevice(&device_id));
     hipDeviceProp_t props;
     HIP_CALL(hipGetDeviceProperties(&props, device_id));
+    HIP_CALL(hipSetDevice(device_id));
 
     std::cout << "Device: " << props.name;
     std::cout << std::endl << std::endl;
@@ -514,10 +519,6 @@ int main(int argc, char *argv[])
 
     std::vector<benchmark::internal::Benchmark*> benchmarks =
     {
-        benchmark::RegisterBenchmark(
-            ("monteCarlo (CPU)"),
-            [=](benchmark::State& state) { runBenchmarkCpu(state, seed, size); }
-        ),
         benchmark::RegisterBenchmark(
             ("monteCarlo (OpenMP)"),
             [=](benchmark::State& state) { runBenchmarkOpenMP(state, seed, size); }
@@ -541,6 +542,17 @@ int main(int argc, char *argv[])
         ),
         #endif
     };
+
+    if(run_cpu)
+    {
+        benchmarks.insert(
+            benchmarks.begin(),
+            benchmark::RegisterBenchmark(
+                ("monteCarlo (CPU)"),
+                [=](benchmark::State& state) { runBenchmarkCpu(state, seed, size); }
+            )
+        );
+    }
 
     for(auto& b : benchmarks)
     {
