@@ -385,6 +385,14 @@ void runBenchmarkHipV2(benchmark::State& state,
     // Warm-up
     for(size_t i = 0; i < warmup_size; i++)
     {
+        HIP_CALL(hipMemcpyAsync(discountCurveGpu, inArgsHost.discountCurve, numBonds * sizeof(bondsYieldTermStruct), hipMemcpyHostToDevice, stream));
+        HIP_CALL(hipMemcpyAsync(repoCurveGpu, inArgsHost.repoCurve, numBonds * sizeof(bondsYieldTermStruct), hipMemcpyHostToDevice, stream));
+        HIP_CALL(hipMemcpyAsync(currDateGpu, inArgsHost.currDate, numBonds * sizeof(bondsDateStruct), hipMemcpyHostToDevice, stream));
+        HIP_CALL(hipMemcpyAsync(maturityDateGpu, inArgsHost.maturityDate, numBonds * sizeof(bondsDateStruct), hipMemcpyHostToDevice, stream));
+        HIP_CALL(hipMemcpyAsync(bondCleanPriceGpu, inArgsHost.bondCleanPrice, numBonds * sizeof(dataType), hipMemcpyHostToDevice, stream));
+        HIP_CALL(hipMemcpyAsync(bondGpu, inArgsHost.bond, numBonds * sizeof(bondStruct), hipMemcpyHostToDevice, stream));
+        HIP_CALL(hipMemcpyAsync(dummyStrikeGpu, inArgsHost.dummyStrike, numBonds * sizeof(dataType), hipMemcpyHostToDevice, stream));
+
         hipLaunchKernelGGL((getBondsResultsGpu), dim3(grid), dim3(threads), 0, 0, inArgs, results, numBonds);
         HIP_CALL(hipStreamSynchronize(stream));
     }
