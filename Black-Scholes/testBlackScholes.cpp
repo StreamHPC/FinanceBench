@@ -12,7 +12,7 @@
 
 #include "blackScholesAnalyticEngineKernelsCpu.h"
 #ifdef BUILD_HIP
-#include "blackScholesAnalyticEngineKernels.h"
+#include "blackScholesAnalyticEngineKernelsGpu.h"
 #include <hip/hip_runtime.h>
 
 #define HIP_CALL(error)         \

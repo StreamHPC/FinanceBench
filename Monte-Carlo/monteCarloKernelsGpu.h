@@ -13,7 +13,9 @@
 #include <type_traits>
 
 //needed for constants related to monte carlo
-#include "monteCarloFuncs.h"
+#include "monteCarloConstants.h"
+#include "monteCarloStructs.h"
+#include <math.h>
 
 //function to set up the random states
 __global__ void setup_kernel(hiprandState * state,

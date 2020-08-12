@@ -13,7 +13,7 @@
 
 #include "monteCarloKernelsCpu.h"
 #ifdef BUILD_HIP
-#include "monteCarloKernels.h"
+#include "monteCarloKernelsGpu.h"
 #include <hip/hip_runtime.h>
 
 #define HIP_CALL(x) do { if((x)!=hipSuccess) { \

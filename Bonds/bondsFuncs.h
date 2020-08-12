@@ -8,29 +8,21 @@
 #include "bondsStructs.h"
 #include <stdbool.h>
 
-#if defined(__HIP_DEVICE_COMPILE__)
-    #define HOST_DEVICE __host__ __device__ inline
-    #define DEVICE __device__
-#else
-    #define HOST_DEVICE inline
-    #define DEVICE
-#endif
-
-static const DEVICE int MonthLength[] = {
+static const int MonthLength[] = {
     31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 };
 
-static const DEVICE int MonthLeapLength[] = {
+static const int MonthLeapLength[] = {
     31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 };
 
-static const DEVICE int MonthOffset[] = {
+static const int MonthOffset[] = {
     0,  31,  59,  90, 120, 151,   // Jan - Jun
     181, 212, 243, 273, 304, 334,   // Jun - Dec
     365     // used in dayOfMonth to bracket day
 };
 
-static const DEVICE int MonthLeapOffset[] = {
+static const int MonthLeapOffset[] = {
     0,  31,  60,  91, 121, 152,   // Jan - Jun
     182, 213, 244, 274, 305, 335,   // Jun - Dec
     366     // used in dayOfMonth to bracket day
@@ -38,7 +30,7 @@ static const DEVICE int MonthLeapOffset[] = {
 
 // the list of all December 31st in the preceding year
 // e.g. for 1901 yearOffset[1] is 366, that is, December 31 1900
-static const DEVICE int YearOffset[] = {
+static const int YearOffset[] = {
     // 1900-1909
         0,  366,  731, 1096, 1461, 1827, 2192, 2557, 2922, 3288,
     // 1910-1919
@@ -103,7 +95,7 @@ static const DEVICE int YearOffset[] = {
     109574
 };
 
-static const DEVICE bool YearIsLeap[] = {
+static const bool YearIsLeap[] = {
     // 1900 is leap in agreement with Excel's bug
     // 1900 is out of valid date range anyway
     // 1900-1909
@@ -170,31 +162,31 @@ static const DEVICE bool YearIsLeap[] = {
     false
 };
 
-HOST_DEVICE int monthLengthKernel(int month,
-                                  bool leapYear)
+inline int monthLengthKernel(int month,
+                             bool leapYear)
 {
     return (leapYear ? MonthLeapLength[month - 1] : MonthLength[month - 1]);
 }
 
-HOST_DEVICE int monthOffsetKernel(int month,
-                                  bool leapYear)
+inline int monthOffsetKernel(int month,
+                             bool leapYear)
 {
     return (leapYear ? MonthLeapOffset[month - 1] : MonthOffset[month - 1]);
 }
 
-HOST_DEVICE int yearOffsetKernel(int y)
+inline int yearOffsetKernel(int y)
 {
     return YearOffset[y - 1900];
 }
 
-HOST_DEVICE bool isLeapKernel(int y)
+inline bool isLeapKernel(int y)
 {
     return YearIsLeap[y - 1900];
 }
 
-HOST_DEVICE bool close(dataType x,
-                       dataType y,
-                       int n)
+inline bool close(dataType x,
+                  dataType y,
+                  int n)
 {
     dataType diff = fabs(x - y);
     dataType tolerance = n * QL_EPSILON_GPU;
@@ -203,15 +195,15 @@ HOST_DEVICE bool close(dataType x,
            diff <= tolerance * fabs(y);
 }
 
-HOST_DEVICE bool close(dataType x,
-                       dataType y)
+inline bool close(dataType x,
+                  dataType y)
 {
     return close(x, y, 42);
 }
 
-HOST_DEVICE bondsDateStruct intializeDateKernel(int d,
-                                                int m,
-                                                int y)
+inline bondsDateStruct intializeDateKernel(int d,
+                                           int m,
+                                           int y)
 {
     bondsDateStruct currDate;
 
@@ -227,9 +219,9 @@ HOST_DEVICE bondsDateStruct intializeDateKernel(int d,
     return currDate;
 }
 
-HOST_DEVICE int dayCount(bondsDateStruct d1,
-                         bondsDateStruct d2,
-                         int dayCounter)
+inline int dayCount(bondsDateStruct d1,
+                    bondsDateStruct d2,
+                    int dayCounter)
 {
     if(dayCounter == USE_EXACT_DAY)
     {
@@ -252,42 +244,42 @@ HOST_DEVICE int dayCount(bondsDateStruct d1,
     }
 }
 
-HOST_DEVICE dataType yearFraction(bondsDateStruct d1,
-                                  bondsDateStruct d2,
-                                  int dayCounter)
+inline dataType yearFraction(bondsDateStruct d1,
+                             bondsDateStruct d2,
+                             int dayCounter)
 {
     return dayCount(d1, d2, dayCounter) / 360.0;
 }
 
-HOST_DEVICE dataType couponNotional()
+inline dataType couponNotional()
 {
     return 100.0;
 }
 
-HOST_DEVICE dataType bondNotional()
+inline dataType bondNotional()
 {
     return 100.0;
 }
 
-HOST_DEVICE dataType fixedRateCouponNominal()
+inline dataType fixedRateCouponNominal()
 {
     return 100.0;
 }
 
-HOST_DEVICE bool eventHasOccurred(bondsDateStruct currDate,
-                                  bondsDateStruct eventDate)
+inline bool eventHasOccurred(bondsDateStruct currDate,
+                             bondsDateStruct eventDate)
 {
          return eventDate.dateSerialNum > currDate.dateSerialNum;
 }
 
-HOST_DEVICE bool cashFlowHasOccurred(bondsDateStruct refDate,
-                                     bondsDateStruct eventDate)
+inline bool cashFlowHasOccurred(bondsDateStruct refDate,
+                                bondsDateStruct eventDate)
 {
         return eventHasOccurred(refDate, eventDate);
 }
 
-HOST_DEVICE bondsDateStruct advanceDate(bondsDateStruct date,
-                                        int numMonthsAdvance)
+inline bondsDateStruct advanceDate(bondsDateStruct date,
+                                   int numMonthsAdvance)
 {
     int d = date.day;
     int m = date.month + numMonthsAdvance;
@@ -314,8 +306,8 @@ HOST_DEVICE bondsDateStruct advanceDate(bondsDateStruct date,
     return newDate;
 }
 
-HOST_DEVICE int getNumCashFlows(inArgsStruct inArgs,
-                                int bondNum)
+inline int getNumCashFlows(inArgsStruct inArgs,
+                           int bondNum)
 {
     int numCashFlows = 0;
 
@@ -331,8 +323,8 @@ HOST_DEVICE int getNumCashFlows(inArgsStruct inArgs,
     return numCashFlows + 1;
 }
 
-HOST_DEVICE dataType interestRateCompoundFactor(intRateStruct intRate,
-                                                dataType t)
+inline dataType interestRateCompoundFactor(intRateStruct intRate,
+                                           dataType t)
 {
     switch(intRate.comp)
     {
@@ -351,17 +343,17 @@ HOST_DEVICE dataType interestRateCompoundFactor(intRateStruct intRate,
     return 0.0f;
 }
 
-HOST_DEVICE dataType interestRateCompoundFactor(intRateStruct intRate,
-                                                bondsDateStruct d1,
-                                                bondsDateStruct d2,
-                                                int dayCounter)
+inline dataType interestRateCompoundFactor(intRateStruct intRate,
+                                           bondsDateStruct d1,
+                                           bondsDateStruct d2,
+                                           int dayCounter)
 {
     dataType t = yearFraction(d1, d2, dayCounter);
     return interestRateCompoundFactor(intRate, t);
 }
 
-HOST_DEVICE dataType fixedRateCouponAmount(cashFlowsStruct cashFlows,
-                                           int numLeg)
+inline dataType fixedRateCouponAmount(cashFlowsStruct cashFlows,
+                                      int numLeg)
 {
     if(cashFlows.legs[numLeg].amount == COMPUTE_AMOUNT)
     {
@@ -374,20 +366,20 @@ HOST_DEVICE dataType fixedRateCouponAmount(cashFlowsStruct cashFlows,
     }
 }
 
-HOST_DEVICE dataType interestRateDiscountFactor(intRateStruct intRate,
-                                                dataType t)
+inline dataType interestRateDiscountFactor(intRateStruct intRate,
+                                           dataType t)
 {
     return 1.0 / interestRateCompoundFactor(intRate, t);
 }
 
-HOST_DEVICE dataType flatForwardDiscountImpl(intRateStruct intRate,
-                                             dataType t)
+inline dataType flatForwardDiscountImpl(intRateStruct intRate,
+                                        dataType t)
 {
     return interestRateDiscountFactor(intRate, t);
 }
 
-HOST_DEVICE dataType bondsYieldTermStructureDiscount(bondsYieldTermStruct ytStruct,
-                                                     bondsDateStruct t)
+inline dataType bondsYieldTermStructureDiscount(bondsYieldTermStruct ytStruct,
+                                                bondsDateStruct t)
 {
     ytStruct.intRate.rate = ytStruct.forward;
     ytStruct.intRate.freq = ytStruct.frequency;
@@ -395,13 +387,14 @@ HOST_DEVICE dataType bondsYieldTermStructureDiscount(bondsYieldTermStruct ytStru
     return flatForwardDiscountImpl(ytStruct.intRate, yearFraction(ytStruct.refDate, t, ytStruct.dayCounter));
 }
 
-HOST_DEVICE dataType cashFlowsNpv(cashFlowsStruct cashFlows,
-                                  bondsYieldTermStruct discountCurve,
-                                  bool includecurrDateFlows,
-                                  bondsDateStruct currDate,
-                                  bondsDateStruct npvDate,
-                                  int numLegs)
+inline dataType cashFlowsNpv(cashFlowsStruct cashFlows,
+                             bondsYieldTermStruct discountCurve,
+                             bool includecurrDateFlows,
+                             bondsDateStruct currDate,
+                             bondsDateStruct npvDate,
+                             int numLegs)
 {
+    (void) includecurrDateFlows;
     npvDate = currDate;
     dataType totalNPV = 0.0;
 
@@ -415,10 +408,10 @@ HOST_DEVICE dataType cashFlowsNpv(cashFlowsStruct cashFlows,
     return totalNPV / bondsYieldTermStructureDiscount(discountCurve, npvDate);
 }
 
-HOST_DEVICE dataType discountingBondEngineCalculateSettlementValue(inArgsStruct inArgs,
-                                                                   int bondNum,
-                                                                   cashFlowsStruct cashFlows,
-                                                                   int numLegs)
+inline dataType discountingBondEngineCalculateSettlementValue(inArgsStruct inArgs,
+                                                              int bondNum,
+                                                              cashFlowsStruct cashFlows,
+                                                              int numLegs)
 {
     bondsDateStruct currDate = inArgs.currDate[bondNum];
 
@@ -434,18 +427,18 @@ HOST_DEVICE dataType discountingBondEngineCalculateSettlementValue(inArgsStruct 
            );
 }
 
-HOST_DEVICE dataType getDirtyPrice(inArgsStruct inArgs,
-                                   int bondNum,
-                                   cashFlowsStruct cashFlows,
-                                   int numLegs)
+inline dataType getDirtyPrice(inArgsStruct inArgs,
+                              int bondNum,
+                              cashFlowsStruct cashFlows,
+                              int numLegs)
 {
     dataType currentNotional = bondNotional();
     return discountingBondEngineCalculateSettlementValue(inArgs, bondNum, cashFlows, numLegs) * 100.0 / currentNotional;
 }
 
-HOST_DEVICE int cashFlowsNextCashFlowNum(cashFlowsStruct cashFlows,
-                                         bondsDateStruct currDate,
-                                         int numLegs)
+inline int cashFlowsNextCashFlowNum(cashFlowsStruct cashFlows,
+                                    bondsDateStruct currDate,
+                                    int numLegs)
 {
     for (int i = 0; i < numLegs; ++i)
     {
@@ -455,11 +448,11 @@ HOST_DEVICE int cashFlowsNextCashFlowNum(cashFlowsStruct cashFlows,
     return (numLegs - 1);
 }
 
-HOST_DEVICE dataType fixedRateCouponAccruedAmount(cashFlowsStruct cashFlows,
-                                                  int numLeg,
-                                                  bondsDateStruct d,
-                                                  inArgsStruct inArgs,
-                                                  int bondNum)
+inline dataType fixedRateCouponAccruedAmount(cashFlowsStruct cashFlows,
+                                             int numLeg,
+                                             bondsDateStruct d,
+                                             inArgsStruct inArgs,
+                                             int bondNum)
 {
     if(d.dateSerialNum <= cashFlows.legs[numLeg].accrualStartDate.dateSerialNum || d.dateSerialNum > inArgs.maturityDate[bondNum].dateSerialNum)
     {
@@ -476,13 +469,14 @@ HOST_DEVICE dataType fixedRateCouponAccruedAmount(cashFlowsStruct cashFlows,
     }
 }
 
-HOST_DEVICE dataType cashFlowsAccruedAmount(cashFlowsStruct cashFlows,
-                                            bool includecurrDateFlows,
-                                            bondsDateStruct currDate,
-                                            int numLegs,
-                                            inArgsStruct inArgs,
-                                            int bondNum)
+inline dataType cashFlowsAccruedAmount(cashFlowsStruct cashFlows,
+                                       bool includecurrDateFlows,
+                                       bondsDateStruct currDate,
+                                       int numLegs,
+                                       inArgsStruct inArgs,
+                                       int bondNum)
 {
+    (void) includecurrDateFlows;
     int legComputeNum = cashFlowsNextCashFlowNum(cashFlows,
                             currDate, numLegs
                         );
@@ -495,22 +489,22 @@ HOST_DEVICE dataType cashFlowsAccruedAmount(cashFlowsStruct cashFlows,
     return result;
 }
 
-HOST_DEVICE dataType bondFunctionsAccruedAmount(inArgsStruct inArgs,
-                                                bondsDateStruct date,
-                                                int bondNum,
-                                                cashFlowsStruct cashFlows,
-                                                int numLegs)
+inline dataType bondFunctionsAccruedAmount(inArgsStruct inArgs,
+                                           bondsDateStruct date,
+                                           int bondNum,
+                                           cashFlowsStruct cashFlows,
+                                           int numLegs)
 {
     return cashFlowsAccruedAmount(
         cashFlows, false, date, numLegs, inArgs, bondNum
     ) * 100.0 / bondNotional();
 }
 
-HOST_DEVICE dataType bondAccruedAmount(inArgsStruct inArgs,
-                                       bondsDateStruct date,
-                                       int bondNum,
-                                       cashFlowsStruct cashFlows,
-                                       int numLegs)
+inline dataType bondAccruedAmount(inArgsStruct inArgs,
+                                  bondsDateStruct date,
+                                  int bondNum,
+                                  cashFlowsStruct cashFlows,
+                                  int numLegs)
 {
     dataType currentNotional = bondNotional();
     if(currentNotional == 0.0)
@@ -519,19 +513,19 @@ HOST_DEVICE dataType bondAccruedAmount(inArgsStruct inArgs,
     return bondFunctionsAccruedAmount(inArgs, date, bondNum, cashFlows, numLegs);
 }
 
-HOST_DEVICE dataType getAccruedAmount(inArgsStruct inArgs,
-                                      bondsDateStruct date,
-                                      int bondNum,
-                                      cashFlowsStruct cashFlows,
-                                      int numLegs)
+inline dataType getAccruedAmount(inArgsStruct inArgs,
+                                 bondsDateStruct date,
+                                 int bondNum,
+                                 cashFlowsStruct cashFlows,
+                                 int numLegs)
 {
     return bondAccruedAmount(inArgs, date, bondNum, cashFlows, numLegs);
 }
 
-HOST_DEVICE dataType interestRateImpliedRate(dataType compound,
-                                             int comp,
-                                             dataType freq,
-                                             dataType t)
+inline dataType interestRateImpliedRate(dataType compound,
+                                        int comp,
+                                        dataType freq,
+                                        dataType t)
 {
     dataType r = 0.0f;
     if (compound==1.0)
@@ -554,12 +548,12 @@ HOST_DEVICE dataType interestRateImpliedRate(dataType compound,
     return r;
 }
 
-HOST_DEVICE dataType getMarketRepoRate(bondsDateStruct d,
-                                       int comp,
-                                       dataType freq,
-                                       bondsDateStruct referenceDate,
-                                       inArgsStruct inArgs,
-                                       int bondNum)
+inline dataType getMarketRepoRate(bondsDateStruct d,
+                                  int comp,
+                                  dataType freq,
+                                  bondsDateStruct referenceDate,
+                                  inArgsStruct inArgs,
+                                  int bondNum)
 {
     dataType compound = 1.0 / bondsYieldTermStructureDiscount(inArgs.repoCurve[bondNum], d);
     return interestRateImpliedRate(
@@ -568,9 +562,9 @@ HOST_DEVICE dataType getMarketRepoRate(bondsDateStruct d,
     );
 }
 
-HOST_DEVICE couponStruct cashFlowsNextCashFlow(cashFlowsStruct cashFlows,
-                                               bondsDateStruct currDate,
-                                               int numLegs)
+inline couponStruct cashFlowsNextCashFlow(cashFlowsStruct cashFlows,
+                                          bondsDateStruct currDate,
+                                          int numLegs)
 {
     for(int i = 0; i < numLegs; ++i)
     {
@@ -580,13 +574,14 @@ HOST_DEVICE couponStruct cashFlowsNextCashFlow(cashFlowsStruct cashFlows,
     return cashFlows.legs[numLegs - 1];
 }
 
-HOST_DEVICE dataType cashFlowsNpvYield(cashFlowsStruct cashFlows,
-                                       intRateStruct y,
-                                       bool includecurrDateFlows,
-                                       bondsDateStruct currDate,
-                                       bondsDateStruct npvDate,
-                                       int numLegs)
+inline dataType cashFlowsNpvYield(cashFlowsStruct cashFlows,
+                                  intRateStruct y,
+                                  bool includecurrDateFlows,
+                                  bondsDateStruct currDate,
+                                  bondsDateStruct npvDate,
+                                  int numLegs)
 {
+    (void) includecurrDateFlows;
     dataType npv = 0.0;
     dataType discount = 1.0;
     bondsDateStruct lastDate;
@@ -626,10 +621,10 @@ HOST_DEVICE dataType cashFlowsNpvYield(cashFlowsStruct cashFlows,
     return npv;
 }
 
-HOST_DEVICE dataType fOp(irrFinderStruct f,
-                         dataType y,
-                         cashFlowsStruct cashFlows,
-                         int numLegs)
+inline dataType fOp(irrFinderStruct f,
+                    dataType y,
+                    cashFlowsStruct cashFlows,
+                    int numLegs)
 {
     intRateStruct yield;
 
@@ -647,13 +642,14 @@ HOST_DEVICE dataType fOp(irrFinderStruct f,
     return (f.npv - NPV);
 }
 
-HOST_DEVICE dataType modifiedDuration(cashFlowsStruct cashFlows,
-                                      intRateStruct y,
-                                      bool includecurrDateFlows,
-                                      bondsDateStruct currDate,
-                                      bondsDateStruct npvDate,
-                                      int numLegs)
+inline dataType modifiedDuration(cashFlowsStruct cashFlows,
+                                 intRateStruct y,
+                                 bool includecurrDateFlows,
+                                 bondsDateStruct currDate,
+                                 bondsDateStruct npvDate,
+                                 int numLegs)
 {
+    (void) includecurrDateFlows;
     dataType P = 0.0;
     dataType dPdy = 0.0;
     dataType r = y.rate;
@@ -697,10 +693,10 @@ HOST_DEVICE dataType modifiedDuration(cashFlowsStruct cashFlows,
     return (-1 * dPdy) / P; // reverse derivative sign
 }
 
-HOST_DEVICE dataType fDerivative(irrFinderStruct f,
-                                 dataType y,
-                                 cashFlowsStruct cashFlows,
-                                 int numLegs)
+inline dataType fDerivative(irrFinderStruct f,
+                            dataType y,
+                            cashFlowsStruct cashFlows,
+                            int numLegs)
 {
     intRateStruct yield;
     yield.rate = y;
@@ -715,11 +711,11 @@ HOST_DEVICE dataType fDerivative(irrFinderStruct f,
     );
 }
 
-HOST_DEVICE dataType solveImpl(solverStruct solver,
-                               irrFinderStruct f,
-                               dataType xAccuracy,
-                               cashFlowsStruct cashFlows,
-                               int numLegs)
+inline dataType solveImpl(solverStruct solver,
+                          irrFinderStruct f,
+                          dataType xAccuracy,
+                          cashFlowsStruct cashFlows,
+                          int numLegs)
 {
     dataType froot, dfroot, dx, dxold;
     dataType xh, xl;
@@ -782,13 +778,13 @@ HOST_DEVICE dataType solveImpl(solverStruct solver,
     return solver.root_;
 }
 
-HOST_DEVICE dataType solverSolve(solverStruct solver,
-                                 irrFinderStruct f,
-                                 dataType accuracy,
-                                 dataType guess,
-                                 dataType step,
-                                 cashFlowsStruct cashFlows,
-                                 int numLegs)
+inline dataType solverSolve(solverStruct solver,
+                            irrFinderStruct f,
+                            dataType accuracy,
+                            dataType guess,
+                            dataType step,
+                            cashFlowsStruct cashFlows,
+                            int numLegs)
 {
     // check whether we really want to use epsilon
     accuracy = MAX(accuracy, QL_EPSILON_GPU);
@@ -859,18 +855,18 @@ HOST_DEVICE dataType solverSolve(solverStruct solver,
     return 0.0f;
 }
 
-HOST_DEVICE dataType getCashFlowsYield(cashFlowsStruct leg,
-                                       dataType npv,
-                                       int dayCounter,
-                                       int compounding,
-                                       dataType frequency,
-                                       bool includecurrDateFlows,
-                                       bondsDateStruct currDate,
-                                       bondsDateStruct npvDate,
-                                       int numLegs,
-                                       dataType accuracy,
-                                       int maxIterations,
-                                       dataType guess)
+inline dataType getCashFlowsYield(cashFlowsStruct leg,
+                                  dataType npv,
+                                  int dayCounter,
+                                  int compounding,
+                                  dataType frequency,
+                                  bool includecurrDateFlows,
+                                  bondsDateStruct currDate,
+                                  bondsDateStruct npvDate,
+                                  int numLegs,
+                                  dataType accuracy,
+                                  int maxIterations,
+                                  dataType guess)
 {
     //Brent solver;
     solverStruct solver;
@@ -888,17 +884,17 @@ HOST_DEVICE dataType getCashFlowsYield(cashFlowsStruct leg,
     return solverSolve(solver, objFunction, accuracy, guess, guess / 10.0, leg, numLegs);
 }
 
-HOST_DEVICE dataType getBondFunctionsYield(dataType cleanPrice,
-                                           int dc,
-                                           int comp,
-                                           dataType freq,
-                                           bondsDateStruct settlement,
-                                           dataType accuracy,
-                                           int maxEvaluations,
-                                           inArgsStruct currInArgs,
-                                           int bondNum,
-                                           cashFlowsStruct cashFlows,
-                                           int numLegs)
+inline dataType getBondFunctionsYield(dataType cleanPrice,
+                                      int dc,
+                                      int comp,
+                                      dataType freq,
+                                      bondsDateStruct settlement,
+                                      dataType accuracy,
+                                      int maxEvaluations,
+                                      inArgsStruct currInArgs,
+                                      int bondNum,
+                                      cashFlowsStruct cashFlows,
+                                      int numLegs)
 {
     dataType dirtyPrice = cleanPrice + bondFunctionsAccruedAmount(currInArgs, settlement, bondNum, cashFlows, numLegs);
     dirtyPrice /= 100.0 / bondNotional();
@@ -911,17 +907,17 @@ HOST_DEVICE dataType getBondFunctionsYield(dataType cleanPrice,
     );
 }
 
-HOST_DEVICE dataType getBondYield(dataType cleanPrice,
-                                  int dc,
-                                  int comp,
-                                  dataType freq,
-                                  bondsDateStruct settlement,
-                                  dataType accuracy,
-                                  int maxEvaluations,
-                                  inArgsStruct currInArgs,
-                                  int bondNum,
-                                  cashFlowsStruct cashFlows,
-                                  int numLegs)
+inline dataType getBondYield(dataType cleanPrice,
+                             int dc,
+                             int comp,
+                             dataType freq,
+                             bondsDateStruct settlement,
+                             dataType accuracy,
+                             int maxEvaluations,
+                             inArgsStruct currInArgs,
+                             int bondNum,
+                             cashFlowsStruct cashFlows,
+                             int numLegs)
 {
     dataType currentNotional = bondNotional();
 
@@ -940,7 +936,7 @@ HOST_DEVICE dataType getBondYield(dataType cleanPrice,
     );
 }
 
-HOST_DEVICE dataType enforceBounds(dataType x)
+inline dataType enforceBounds(dataType x)
 {
     /*if (lowerBoundEnforced_ && x < lowerBound_)
         return lowerBound_;

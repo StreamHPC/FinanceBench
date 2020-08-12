@@ -17,6 +17,7 @@ void getPathCpu(dataType * path,
                 monteCarloOptionStruct optionStruct,
                 unsigned int * seedp)
 {
+    (void) sampleNum;
     path[0] = getProcessValX0(optionStruct);
 
     for(size_t i = 1; i < SEQUENCE_LENGTH; ++i)
@@ -38,12 +39,13 @@ void monteCarloKernelOpenMP(dataType * samplePrices,
                             unsigned int seed,
                             int numSamples)
 {
+    (void) times;
     #pragma omp parallel
 	{
 		unsigned int my_id = omp_get_thread_num();
 		unsigned int my_seed = seed + my_id;
 		#pragma omp for schedule(static, 1000)
-		for(size_t numSample = 0; numSample < numSamples; ++numSample)
+		for(int numSample = 0; numSample < numSamples; ++numSample)
 		{
 			// Declare and initialize the path.
 			dataType path[SEQUENCE_LENGTH];
@@ -68,7 +70,8 @@ void monteCarloKernelCpu(dataType * samplePrices,
                          unsigned int seed,
                          int numSamples)
 {
-    for(size_t numSample = 0; numSample < numSamples; ++numSample)
+    (void) times;
+    for(int numSample = 0; numSample < numSamples; ++numSample)
     {
         //declare and initialize the path
         dataType path[SEQUENCE_LENGTH];

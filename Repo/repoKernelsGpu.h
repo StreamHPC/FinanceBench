@@ -6,7 +6,7 @@
 #define REPO_KERNELS_H
 
 #include <hip/hip_runtime.h>
-#include "repoFuncs.h"
+#include "repoStructs.h"
 
 __global__ void getRepoResultsGpu(inArgsStruct inArgs,
 					              resultsStruct results,

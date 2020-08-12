@@ -23,7 +23,7 @@ if(BUILD_TEST)
     target_include_directories(testMonteCarlo SYSTEM BEFORE
     PUBLIC
       ${GTEST_INCLUDE_DIRS}
-  )
+    )
     set_target_properties(testMonteCarlo
       PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -32,12 +32,12 @@ if(BUILD_TEST)
 endif()
 
 if(BUILD_HIP)
-    add_library(monteCarloHip monteCarloKernels.cpp)
-    if(HIP_PLATFORM STREQUAL "nvcc")
+    add_library(monteCarloHip monteCarloKernelsGpu.cpp)
+    if(HIP_COMPILER STREQUAL "nvcc")
         set_property(TARGET monteCarloHip PROPERTY CUDA_STANDARD 11)
-        set_source_files_properties(monteCarloKernels.cpp PROPERTIES LANGUAGE CUDA)
+        set_source_files_properties(monteCarloKernelsGpu.cpp PROPERTIES LANGUAGE CUDA)
     endif()
-    if(HIP_PLATFORM STREQUAL "hcc")
+    if(HIP_COMPILER STREQUAL "hcc" OR HIP_COMPILER STREQUAL "clang")
         target_link_libraries(monteCarloHip hip::device)
         foreach(amdgpu_target ${AMDGPU_TARGETS})
             target_link_libraries(monteCarloHip --amdgpu-target=${amdgpu_target})
@@ -45,20 +45,20 @@ if(BUILD_HIP)
     endif()
     target_include_directories(monteCarloHip SYSTEM BEFORE
       PUBLIC
-        /opt/rocm/include
-        /opt/rocm/hiprand/include
-        /opt/rocm/hiprand/include/hiprand
-        /opt/rocm/rocrand/include
+        ${ROCM_ROOT_PATH}/include
+        ${ROCM_ROOT_PATH}/hiprand/include
+        ${ROCM_ROOT_PATH}/hiprand/include/hiprand
+        ${ROCM_ROOT_PATH}/rocrand/include
     )
     #target_link_libraries(monteCarlo monteCarloCuda)
     #set_source_files_properties(monteCarloEngine.cpp PROPERTIES LANGUAGE CUDA)
     if(BUILD_BENCHMARK)
         target_link_libraries(benchmarkMonteCarlo monteCarloHip)
-        if(HIP_PLATFORM STREQUAL "nvcc")
+        if(HIP_COMPILER STREQUAL "nvcc")
             set_property(TARGET benchmarkMonteCarlo PROPERTY CUDA_STANDARD 11)
             set_source_files_properties(benchmarkMonteCarlo.cpp PROPERTIES LANGUAGE CUDA)
         endif()
-        if(HIP_PLATFORM STREQUAL "hcc")
+        if(HIP_COMPILER STREQUAL "hcc" OR HIP_COMPILER STREQUAL "clang")
             target_link_libraries(benchmarkMonteCarlo hip::device)
             foreach(amdgpu_target ${AMDGPU_TARGETS})
                 target_link_libraries(benchmarkMonteCarlo --amdgpu-target=${amdgpu_target})
@@ -67,11 +67,11 @@ if(BUILD_HIP)
     endif()
     if(BUILD_TEST)
         target_link_libraries(testMonteCarlo monteCarloHip)
-        if(HIP_PLATFORM STREQUAL "nvcc")
+        if(HIP_COMPILER STREQUAL "nvcc")
             set_property(TARGET testMonteCarlo PROPERTY CUDA_STANDARD 11)
             set_source_files_properties(testMonteCarlo.cpp PROPERTIES LANGUAGE CUDA)
         endif()
-        if(HIP_PLATFORM STREQUAL "hcc")
+        if(HIP_COMPILER STREQUAL "hcc" OR HIP_COMPILER STREQUAL "clang")
             target_link_libraries(testMonteCarlo hip::device)
             foreach(amdgpu_target ${AMDGPU_TARGETS})
                 target_link_libraries(testMonteCarlo --amdgpu-target=${amdgpu_target})

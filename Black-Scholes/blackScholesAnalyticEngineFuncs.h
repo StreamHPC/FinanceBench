@@ -14,52 +14,47 @@
 //needed for the constants in the error function
 #include "errorFunctConsts.h"
 
-#if defined(__HIP_DEVICE_COMPILE__)
-    #define HOST_DEVICE __host__ __device__ inline
-#else
-    #define HOST_DEVICE inline
-#endif
-
 //device kernel to retrieve the compound factor in interestRate
-HOST_DEVICE float interestRateCompoundFactor(float t,
-                                             yieldTermStruct currYieldTermStruct)
+inline float interestRateCompoundFactor(float t,
+                                        yieldTermStruct currYieldTermStruct)
 {
     return (exp((currYieldTermStruct.forward) * t));
 }
 
 //device kernel to retrieve the discount factor in interestRate
-HOST_DEVICE float interestRateDiscountFactor(float t,
-                                             yieldTermStruct currYieldTermStruct)
+inline float interestRateDiscountFactor(float t,
+                                        yieldTermStruct currYieldTermStruct)
 {
     return 1.0f / interestRateCompoundFactor(t, currYieldTermStruct);
 }
 
 //device function to get the variance of the black volatility function
-HOST_DEVICE float getBlackVolBlackVar(blackVolStruct volTS)
+inline float getBlackVolBlackVar(blackVolStruct volTS)
 {
     float vol = volTS.volatility;
     return vol * vol * volTS.timeYearFraction;
 }
 
 //device function to get the discount on a dividend yield
-HOST_DEVICE float getDiscountOnDividendYield(float yearFraction,
-                                             yieldTermStruct dividendYieldTermStruct)
+inline float getDiscountOnDividendYield(float yearFraction,
+                                        yieldTermStruct dividendYieldTermStruct)
 {
     float intDiscountFactor = interestRateDiscountFactor(yearFraction, dividendYieldTermStruct);
     return intDiscountFactor;
 }
 
 //device function to get the discount on the risk free rate
-HOST_DEVICE float getDiscountOnRiskFreeRate(float yearFraction,
-                                            yieldTermStruct riskFreeRateYieldTermStruct)
+inline float getDiscountOnRiskFreeRate(float yearFraction,
+                                       yieldTermStruct riskFreeRateYieldTermStruct)
 {
     return interestRateDiscountFactor(yearFraction, riskFreeRateYieldTermStruct);
 }
 
 //device kernel to run the error function
-HOST_DEVICE float errorFunct(normalDistStruct normDist,
-                             float x)
+inline float errorFunct(normalDistStruct normDist,
+                        float x)
 {
+    (void) normDist;
     float R, S, P, Q, s, y, z, r, ax;
 
     ax = fabs(x);
@@ -132,8 +127,8 @@ HOST_DEVICE float errorFunct(normalDistStruct normDist,
 }
 
 //device kernel to run the operator function in cumulative normal distribution
-HOST_DEVICE float cumNormDistOp(normalDistStruct normDist,
-                                float z)
+inline float cumNormDistOp(normalDistStruct normDist,
+                           float z)
 {
     z = (z - normDist.average) / normDist.sigma;
     float result = 0.5 * (1.0 + errorFunct(normDist, z * M_SQRT_2));
@@ -141,8 +136,8 @@ HOST_DEVICE float cumNormDistOp(normalDistStruct normDist,
 }
 
 //device kernel to run the gaussian function in the normal distribution
-HOST_DEVICE float gaussianFunctNormDist(normalDistStruct normDist,
-                                        float x)
+inline float gaussianFunctNormDist(normalDistStruct normDist,
+                                   float x)
 {
     float deltax = x - normDist.average;
     float exponent = -(deltax * deltax) / normDist.denominator;
@@ -153,15 +148,15 @@ HOST_DEVICE float gaussianFunctNormDist(normalDistStruct normDist,
 }
 
 //device kernel to retrieve the derivative in a cumulative normal distribution
-HOST_DEVICE float cumNormDistDeriv(normalDistStruct normDist,
-                                   float x)
+inline float cumNormDistDeriv(normalDistStruct normDist,
+                              float x)
 {
     float xn = (x - normDist.average) / normDist.sigma;
     return gaussianFunctNormDist(normDist, xn) / normDist.sigma;
 }
 
 //device function to initialize the cumulative normal distribution structure
-HOST_DEVICE void initCumNormDist(normalDistStruct& currCumNormDist)
+inline void initCumNormDist(normalDistStruct& currCumNormDist)
 {
     currCumNormDist.average = 0.0f;
     currCumNormDist.sigma = 1.0f;
@@ -171,8 +166,8 @@ HOST_DEVICE void initCumNormDist(normalDistStruct& currCumNormDist)
 }
 
 //device function to initialize variable in the black calculator
-HOST_DEVICE void initBlackCalcVars(blackCalcStruct& blackCalculator,
-                                   payoffStruct payoff)
+inline void initBlackCalcVars(blackCalcStruct& blackCalculator,
+                              payoffStruct payoff)
 {
     blackCalculator.d1 = log(blackCalculator.forward / blackCalculator.strike) /
                          blackCalculator.stdDev + 0.5 * blackCalculator.stdDev;
@@ -215,11 +210,11 @@ HOST_DEVICE void initBlackCalcVars(blackCalcStruct& blackCalculator,
 }
 
 //device function to initialize the black calculator
-HOST_DEVICE void initBlackCalculator(blackCalcStruct& blackCalc,
-                                     payoffStruct payoff,
-                                     float forwardPrice,
-                                     float stdDev,
-                                     float riskFreeDiscount)
+inline void initBlackCalculator(blackCalcStruct& blackCalc,
+                                payoffStruct payoff,
+                                float forwardPrice,
+                                float stdDev,
+                                float riskFreeDiscount)
 {
     blackCalc.strike = payoff.strike;
     blackCalc.forward = forwardPrice;
@@ -231,7 +226,7 @@ HOST_DEVICE void initBlackCalculator(blackCalcStruct& blackCalc,
 }
 
 //device function to retrieve the output resulting value
-HOST_DEVICE float getResultVal(blackCalcStruct blackCalculator)
+inline float getResultVal(blackCalcStruct blackCalculator)
 {
     float result = blackCalculator.discount * (blackCalculator.forward *
                    blackCalculator.alpha + blackCalculator.x * blackCalculator.beta);

@@ -6,8 +6,7 @@
 #define BONDS_KERNELS_H
 
 #include <hip/hip_runtime.h>
-#include "bondsFuncs.h"
-
+#include "bondsStructs.h"
 
 __global__ void getBondsResultsGpu(inArgsStruct inArgs,
                                    resultsStruct results,

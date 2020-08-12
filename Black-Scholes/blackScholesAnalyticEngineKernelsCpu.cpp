@@ -11,7 +11,7 @@ void getOutValOptionCpu(optionInputStruct * options,
                         int numVals)
 {
     //check if within current options
-    for(size_t numOption = 0; numOption < numVals; ++numOption)
+    for(int numOption = 0; numOption < numVals; ++numOption)
     {
         optionInputStruct threadOption = options[numOption];
 
@@ -69,7 +69,7 @@ void getOutValOptionOpenMP(optionInputStruct * options,
 {
     //check if within current options
     #pragma omp parallel for
-    for(size_t numOption = 0; numOption < numVals; ++numOption)
+    for(int numOption = 0; numOption < numVals; ++numOption)
     {
         optionInputStruct threadOption = options[numOption];
 

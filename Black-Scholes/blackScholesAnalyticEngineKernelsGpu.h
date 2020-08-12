@@ -12,10 +12,10 @@
 #include <vector>
 #include <algorithm>
 
-//needed for the structs used on the code
-//#include "blackScholesAnalyticEngineStructs.h"
 #include <hip/hip_runtime.h>
-#include "blackScholesAnalyticEngineFuncs.h"
+//needed for the structs used on the code
+#include "blackScholesAnalyticEngineStructs.h"
+
 
 //constants used in this code
 #define M_1_SQRTPI  0.564189583547756286948

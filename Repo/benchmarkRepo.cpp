@@ -13,7 +13,7 @@
 
 #include "repoKernelsCpu.h"
 #ifdef BUILD_HIP
-#include "repoKernels.h"
+#include "repoKernelsGpu.h"
 #include <hip/hip_runtime.h>
 
 #define HIP_CALL(x) do { if((x)!=hipSuccess) { \
