@@ -171,14 +171,17 @@ void runBenchmarkHipV1(benchmark::State& state,
     sampleWeights = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
     times = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
 
+    hipStream_t stream;
+    HIP_CALL(hipStreamCreate(&stream));
+
     HIP_CALL(hipMalloc((void **)&devStates, size * sizeof(hiprandState)));
     HIP_CALL(hipMalloc(&samplePricesGpu, NUM_OPTIONS * size * sizeof(dataType)));
     HIP_CALL(hipMalloc(&sampleWeightsGpu, NUM_OPTIONS * size * sizeof(dataType)));
     HIP_CALL(hipMalloc(&timesGpu, NUM_OPTIONS * size * sizeof(dataType)));
     HIP_CALL(hipMalloc(&optionStructsGpu, NUM_OPTIONS * sizeof(monteCarloOptionStruct)));
 
-    HIP_CALL(hipMemcpy(optionStructsGpu, optionStructs, NUM_OPTIONS * sizeof(monteCarloOptionStruct), hipMemcpyHostToDevice));
-    HIP_CALL(hipDeviceSynchronize());
+    HIP_CALL(hipMemcpyAsync(optionStructsGpu, optionStructs, NUM_OPTIONS * sizeof(monteCarloOptionStruct), hipMemcpyHostToDevice, stream));
+    HIP_CALL(hipStreamSynchronize(stream));
 
     dim3 grid((size_t)ceil((dataType)size / ((dataType)THREAD_BLOCK_SIZE)), 1, 1);
     dim3 threads(THREAD_BLOCK_SIZE, 1, 1);
@@ -186,30 +189,30 @@ void runBenchmarkHipV1(benchmark::State& state,
     // Warm-up
     for(size_t i = 0; i < warmup_size; i++)
     {
-        hipLaunchKernelGGL((setup_kernel), dim3(grid), dim3(threads), 0, 0, devStates, seed, size);
+        hipLaunchKernelGGL((setup_kernel), dim3(grid), dim3(threads), 0, stream, devStates, seed, size);
         HIP_CALL(hipPeekAtLastError());
-        hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, 0,
+        hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, stream,
             samplePricesGpu, sampleWeightsGpu, timesGpu,
             (1.0f / (dataType)SEQUENCE_LENGTH), devStates, optionStructsGpu,
             seed, size
         );
         HIP_CALL(hipPeekAtLastError());
-        HIP_CALL(hipDeviceSynchronize());
+        HIP_CALL(hipStreamSynchronize(stream));
     }
 
     for(auto _ : state)
     {
         auto start = std::chrono::high_resolution_clock::now();
 
-        hipLaunchKernelGGL((setup_kernel), dim3(grid), dim3(threads), 0, 0, devStates, seed, size);
+        hipLaunchKernelGGL((setup_kernel), dim3(grid), dim3(threads), 0, stream, devStates, seed, size);
         HIP_CALL(hipPeekAtLastError());
-        hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, 0,
+        hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, stream,
             samplePricesGpu, sampleWeightsGpu, timesGpu,
             (1.0f / (dataType)SEQUENCE_LENGTH), devStates, optionStructsGpu,
             seed, size
         );
         HIP_CALL(hipPeekAtLastError());
-        HIP_CALL(hipDeviceSynchronize());
+        HIP_CALL(hipStreamSynchronize(stream));
 
         auto end = std::chrono::high_resolution_clock::now();
         auto elapsed_seconds =
@@ -252,6 +255,9 @@ void runBenchmarkHipV2(benchmark::State& state,
     sampleWeights = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
     times = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
 
+    hipStream_t stream;
+    HIP_CALL(hipStreamCreate(&stream));
+
     HIP_CALL(hipMalloc((void **)&devStates, size * sizeof(hiprandState)));
     HIP_CALL(hipMalloc(&samplePricesGpu, NUM_OPTIONS * size * sizeof(dataType)));
     HIP_CALL(hipMalloc(&sampleWeightsGpu, NUM_OPTIONS * size * sizeof(dataType)));
@@ -264,35 +270,35 @@ void runBenchmarkHipV2(benchmark::State& state,
     // Warm-up
     for(size_t i = 0; i < warmup_size; i++)
     {
-        hipLaunchKernelGGL((setup_kernel), dim3(grid), dim3(threads), 0, 0, devStates, seed, size);
+        hipLaunchKernelGGL((setup_kernel), dim3(grid), dim3(threads), 0, stream, devStates, seed, size);
         //hipDeviceSynchronize();
-        hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, 0,
+        hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, stream,
             samplePricesGpu, sampleWeightsGpu, timesGpu,
             (1.0f / (dataType)SEQUENCE_LENGTH), devStates, optionStructsGpu,
             seed, size
         );
-        HIP_CALL(hipDeviceSynchronize());
+        HIP_CALL(hipStreamSynchronize(stream));
     }
 
     for(auto _ : state)
     {
         auto start = std::chrono::high_resolution_clock::now();
 
-        HIP_CALL(hipMemcpy(optionStructsGpu, optionStructs, NUM_OPTIONS * sizeof(monteCarloOptionStruct), hipMemcpyHostToDevice));
+        HIP_CALL(hipMemcpyAsync(optionStructsGpu, optionStructs, NUM_OPTIONS * sizeof(monteCarloOptionStruct), hipMemcpyHostToDevice, stream));
 
-        hipLaunchKernelGGL((setup_kernel), dim3(grid), dim3(threads), 0, 0, devStates, seed, size);
+        hipLaunchKernelGGL((setup_kernel), dim3(grid), dim3(threads), 0, stream, devStates, seed, size);
         HIP_CALL(hipPeekAtLastError());
-        hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, 0,
+        hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, stream,
             samplePricesGpu, sampleWeightsGpu, timesGpu,
             (1.0f / (dataType)SEQUENCE_LENGTH), devStates, optionStructsGpu,
             seed, size
         );
         HIP_CALL(hipPeekAtLastError());
 
-        HIP_CALL(hipMemcpy(samplePrices, samplePricesGpu, size * sizeof(dataType), hipMemcpyDeviceToHost));
-        HIP_CALL(hipMemcpy(sampleWeights, sampleWeightsGpu, size * sizeof(dataType), hipMemcpyDeviceToHost));
-        HIP_CALL(hipMemcpy(times, timesGpu, size * sizeof(dataType), hipMemcpyDeviceToHost));
-        HIP_CALL(hipDeviceSynchronize());
+        HIP_CALL(hipMemcpyAsync(samplePrices, samplePricesGpu, size * sizeof(dataType), hipMemcpyDeviceToHost, stream));
+        HIP_CALL(hipMemcpyAsync(sampleWeights, sampleWeightsGpu, size * sizeof(dataType), hipMemcpyDeviceToHost, stream));
+        HIP_CALL(hipMemcpyAsync(times, timesGpu, size * sizeof(dataType), hipMemcpyDeviceToHost, stream));
+        HIP_CALL(hipStreamSynchronize(stream));
 
         auto end = std::chrono::high_resolution_clock::now();
         auto elapsed_seconds =
@@ -339,6 +345,9 @@ void runBenchmarkHipV3(benchmark::State& state,
     sampleWeights = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
     times = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
 
+    hipStream_t stream;
+    HIP_CALL(hipStreamCreate(&stream));
+
     #if defined(__NVCC__)
     HIP_CALL(hipMalloc((void **)&devStates, size * sizeof(hiprandStatePhilox4_32_10_t)));
     #else
@@ -349,8 +358,8 @@ void runBenchmarkHipV3(benchmark::State& state,
     HIP_CALL(hipMalloc(&timesGpu, NUM_OPTIONS * size * sizeof(dataType)));
     HIP_CALL(hipMalloc(&optionStructsGpu, NUM_OPTIONS * sizeof(monteCarloOptionStruct)));
 
-    HIP_CALL(hipMemcpy(optionStructsGpu, optionStructs, NUM_OPTIONS * sizeof(monteCarloOptionStruct), hipMemcpyHostToDevice));
-    HIP_CALL(hipDeviceSynchronize());
+    HIP_CALL(hipMemcpyAsync(optionStructsGpu, optionStructs, NUM_OPTIONS * sizeof(monteCarloOptionStruct), hipMemcpyHostToDevice, stream));
+    HIP_CALL(hipStreamSynchronize(stream));
 
     dim3 grid((size_t)ceil((dataType)size / ((dataType)THREAD_BLOCK_SIZE)), 1, 1);
     dim3 threads(THREAD_BLOCK_SIZE, 1, 1);
@@ -358,26 +367,26 @@ void runBenchmarkHipV3(benchmark::State& state,
     // Warm-up
     for(size_t i = 0; i < warmup_size; i++)
     {
-        hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, 0,
+        hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, stream,
             samplePricesGpu, sampleWeightsGpu, timesGpu,
             (1.0f / (dataType)SEQUENCE_LENGTH), devStates, optionStructsGpu,
             seed, size
         );
         HIP_CALL(hipPeekAtLastError());
-        HIP_CALL(hipDeviceSynchronize());
+        HIP_CALL(hipStreamSynchronize(stream));
     }
 
     for(auto _ : state)
     {
         auto start = std::chrono::high_resolution_clock::now();
 
-        hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, 0,
+        hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, stream,
             samplePricesGpu, sampleWeightsGpu, timesGpu,
             (1.0f / (dataType)SEQUENCE_LENGTH), devStates, optionStructsGpu,
             seed, size
         );
         HIP_CALL(hipPeekAtLastError());
-        HIP_CALL(hipDeviceSynchronize());
+        HIP_CALL(hipStreamSynchronize(stream));
 
         auto end = std::chrono::high_resolution_clock::now();
         auto elapsed_seconds =
@@ -390,6 +399,7 @@ void runBenchmarkHipV3(benchmark::State& state,
     HIP_CALL(hipFree(sampleWeightsGpu));
     HIP_CALL(hipFree(timesGpu));
     HIP_CALL(hipFree(optionStructsGpu));
+    HIP_CALL(hipStreamDestroy(stream));
 
     free(samplePrices);
     free(sampleWeights);
@@ -424,6 +434,9 @@ void runBenchmarkHipV4(benchmark::State& state,
     sampleWeights = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
     times = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
 
+    hipStream_t stream;
+    HIP_CALL(hipStreamCreate(&stream));
+
     #if defined(__NVCC__)
     HIP_CALL(hipMalloc((void **)&devStates, size * sizeof(hiprandStatePhilox4_32_10_t)));
     #else
@@ -440,32 +453,32 @@ void runBenchmarkHipV4(benchmark::State& state,
     // Warm-up
     for(size_t i = 0; i < warmup_size; i++)
     {
-        hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, 0,
+        hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, stream,
             samplePricesGpu, sampleWeightsGpu, timesGpu,
             (1.0f / (dataType)SEQUENCE_LENGTH), devStates, optionStructsGpu,
             seed, size
         );
         HIP_CALL(hipPeekAtLastError());
-        HIP_CALL(hipDeviceSynchronize());
+        HIP_CALL(hipStreamSynchronize(stream));
     }
 
     for(auto _ : state)
     {
         auto start = std::chrono::high_resolution_clock::now();
 
-        HIP_CALL(hipMemcpy(optionStructsGpu, optionStructs, NUM_OPTIONS * sizeof(monteCarloOptionStruct), hipMemcpyHostToDevice));
+        HIP_CALL(hipMemcpyAsync(optionStructsGpu, optionStructs, NUM_OPTIONS * sizeof(monteCarloOptionStruct), hipMemcpyHostToDevice, stream));
 
-        hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, 0,
+        hipLaunchKernelGGL((monteCarloGpuKernel), dim3(grid), dim3(threads), 0, stream,
             samplePricesGpu, sampleWeightsGpu, timesGpu,
             (1.0f / (dataType)SEQUENCE_LENGTH), devStates, optionStructsGpu,
             seed, size
         );
         HIP_CALL(hipPeekAtLastError());
 
-        HIP_CALL(hipMemcpy(samplePrices, samplePricesGpu, size * sizeof(dataType), hipMemcpyDeviceToHost));
-        HIP_CALL(hipMemcpy(sampleWeights, sampleWeightsGpu, size * sizeof(dataType), hipMemcpyDeviceToHost));
-        HIP_CALL(hipMemcpy(times, timesGpu, size * sizeof(dataType), hipMemcpyDeviceToHost));
-        HIP_CALL(hipDeviceSynchronize());
+        HIP_CALL(hipMemcpyAsync(samplePrices, samplePricesGpu, size * sizeof(dataType), hipMemcpyDeviceToHost, stream));
+        HIP_CALL(hipMemcpyAsync(sampleWeights, sampleWeightsGpu, size * sizeof(dataType), hipMemcpyDeviceToHost, stream));
+        HIP_CALL(hipMemcpyAsync(times, timesGpu, size * sizeof(dataType), hipMemcpyDeviceToHost, stream));
+        HIP_CALL(hipStreamSynchronize(stream));
 
         auto end = std::chrono::high_resolution_clock::now();
         auto elapsed_seconds =
@@ -478,6 +491,7 @@ void runBenchmarkHipV4(benchmark::State& state,
     HIP_CALL(hipFree(sampleWeightsGpu));
     HIP_CALL(hipFree(timesGpu));
     HIP_CALL(hipFree(optionStructsGpu));
+    HIP_CALL(hipStreamDestroy(stream));
 
     free(samplePrices);
     free(sampleWeights);

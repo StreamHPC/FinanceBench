@@ -4,21 +4,21 @@
 
 #include "repoKernelsGpu.h"
 
-static const __device__ int MonthLength[] = {
+static const __constant__ int MonthLength[] = {
     31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 };
 
-static const __device__ int MonthLeapLength[] = {
+static const __constant__ int MonthLeapLength[] = {
     31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 };
 
-static const __device__ int MonthOffset[] = {
+static const __constant__ int MonthOffset[] = {
     0,  31,  59,  90, 120, 151,   // Jan - Jun
     181, 212, 243, 273, 304, 334,   // Jun - Dec
     365     // used in dayOfMonth to bracket day
 };
 
-static const __device__ int MonthLeapOffset[] = {
+static const __constant__ int MonthLeapOffset[] = {
     0,  31,  60,  91, 121, 152,   // Jan - Jun
     182, 213, 244, 274, 305, 335,   // Jun - Dec
     366     // used in dayOfMonth to bracket day
@@ -26,7 +26,7 @@ static const __device__ int MonthLeapOffset[] = {
 
 // the list of all December 31st in the preceding year
 // e.g. for 1901 yearOffset[1] is 366, that is, December 31 1900
-static const __device__ int YearOffset[] = {
+static const __constant__ int YearOffset[] = {
     // 1900-1909
         0,  366,  731, 1096, 1461, 1827, 2192, 2557, 2922, 3288,
     // 1910-1919
@@ -91,7 +91,7 @@ static const __device__ int YearOffset[] = {
     109574
 };
 
-static const __device__ bool YearIsLeap[] = {
+static const __constant__ bool YearIsLeap[] = {
     // 1900 is leap in agreement with Excel's bug
     // 1900 is out of valid date range anyway
     // 1900-1909

@@ -231,6 +231,9 @@ void runBenchmarkHipV1(benchmark::State& state,
     dataType * cleanPriceGpu;
     dataType * bondForwardValGpu;
 
+    hipStream_t stream;
+    HIP_CALL(hipStreamCreate(&stream));
+
     HIP_CALL(hipMalloc(&discountCurveGpu, numBonds * sizeof(bondsYieldTermStruct)));
     HIP_CALL(hipMalloc(&repoCurveGpu, numBonds * sizeof(bondsYieldTermStruct)));
     HIP_CALL(hipMalloc(&currDateGpu, numBonds * sizeof(bondsDateStruct)));
@@ -243,14 +246,14 @@ void runBenchmarkHipV1(benchmark::State& state,
     HIP_CALL(hipMalloc(&cleanPriceGpu, numBonds * sizeof(dataType)));
     HIP_CALL(hipMalloc(&bondForwardValGpu, numBonds * sizeof(dataType)));
 
-    HIP_CALL(hipMemcpy(discountCurveGpu, inArgsHost.discountCurve, numBonds * sizeof(bondsYieldTermStruct), hipMemcpyHostToDevice));
-    HIP_CALL(hipMemcpy(repoCurveGpu, inArgsHost.repoCurve, numBonds * sizeof(bondsYieldTermStruct), hipMemcpyHostToDevice));
-    HIP_CALL(hipMemcpy(currDateGpu, inArgsHost.currDate, numBonds * sizeof(bondsDateStruct), hipMemcpyHostToDevice));
-    HIP_CALL(hipMemcpy(maturityDateGpu, inArgsHost.maturityDate, numBonds * sizeof(bondsDateStruct), hipMemcpyHostToDevice));
-    HIP_CALL(hipMemcpy(bondCleanPriceGpu, inArgsHost.bondCleanPrice, numBonds * sizeof(dataType), hipMemcpyHostToDevice));
-    HIP_CALL(hipMemcpy(bondGpu, inArgsHost.bond, numBonds * sizeof(bondStruct), hipMemcpyHostToDevice));
-    HIP_CALL(hipMemcpy(dummyStrikeGpu, inArgsHost.dummyStrike, numBonds * sizeof(dataType), hipMemcpyHostToDevice));
-    HIP_CALL(hipDeviceSynchronize());
+    HIP_CALL(hipMemcpyAsync(discountCurveGpu, inArgsHost.discountCurve, numBonds * sizeof(bondsYieldTermStruct), hipMemcpyHostToDevice, stream));
+    HIP_CALL(hipMemcpyAsync(repoCurveGpu, inArgsHost.repoCurve, numBonds * sizeof(bondsYieldTermStruct), hipMemcpyHostToDevice, stream));
+    HIP_CALL(hipMemcpyAsync(currDateGpu, inArgsHost.currDate, numBonds * sizeof(bondsDateStruct), hipMemcpyHostToDevice, stream));
+    HIP_CALL(hipMemcpyAsync(maturityDateGpu, inArgsHost.maturityDate, numBonds * sizeof(bondsDateStruct), hipMemcpyHostToDevice, stream));
+    HIP_CALL(hipMemcpyAsync(bondCleanPriceGpu, inArgsHost.bondCleanPrice, numBonds * sizeof(dataType), hipMemcpyHostToDevice, stream));
+    HIP_CALL(hipMemcpyAsync(bondGpu, inArgsHost.bond, numBonds * sizeof(bondStruct), hipMemcpyHostToDevice, stream));
+    HIP_CALL(hipMemcpyAsync(dummyStrikeGpu, inArgsHost.dummyStrike, numBonds * sizeof(dataType), hipMemcpyHostToDevice, stream));
+    HIP_CALL(hipStreamSynchronize(stream));
 
     inArgsStruct inArgs;
     inArgs.discountCurve    = discountCurveGpu;
@@ -273,16 +276,16 @@ void runBenchmarkHipV1(benchmark::State& state,
     // Warm-up
     for(size_t i = 0; i < warmup_size; i++)
     {
-        hipLaunchKernelGGL((getBondsResultsGpu), dim3(grid), dim3(threads), 0, 0, inArgs, results, numBonds);
-        HIP_CALL(hipDeviceSynchronize());
+        hipLaunchKernelGGL((getBondsResultsGpu), dim3(grid), dim3(threads), 0, stream, inArgs, results, numBonds);
+        HIP_CALL(hipStreamSynchronize(stream));
     }
 
     for(auto _ : state)
     {
         auto start = std::chrono::high_resolution_clock::now();
 
-        hipLaunchKernelGGL((getBondsResultsGpu), dim3(grid), dim3(threads), 0, 0, inArgs, results, numBonds);
-        HIP_CALL(hipDeviceSynchronize());
+        hipLaunchKernelGGL((getBondsResultsGpu), dim3(grid), dim3(threads), 0, stream, inArgs, results, numBonds);
+        HIP_CALL(hipStreamSynchronize(stream));
 
         auto end = std::chrono::high_resolution_clock::now();
         auto elapsed_seconds =
@@ -301,6 +304,7 @@ void runBenchmarkHipV1(benchmark::State& state,
     HIP_CALL(hipFree(accruedAmountCurrDateGpu));
     HIP_CALL(hipFree(cleanPriceGpu));
     HIP_CALL(hipFree(bondForwardValGpu));
+    HIP_CALL(hipStreamDestroy(stream));
 
     free(inArgsHost.discountCurve);
     free(inArgsHost.repoCurve);
@@ -345,6 +349,9 @@ void runBenchmarkHipV2(benchmark::State& state,
     dataType * cleanPriceGpu;
     dataType * bondForwardValGpu;
 
+    hipStream_t stream;
+    HIP_CALL(hipStreamCreate(&stream));
+
     HIP_CALL(hipMalloc(&discountCurveGpu, numBonds * sizeof(bondsYieldTermStruct)));
     HIP_CALL(hipMalloc(&repoCurveGpu, numBonds * sizeof(bondsYieldTermStruct)));
     HIP_CALL(hipMalloc(&currDateGpu, numBonds * sizeof(bondsDateStruct)));
@@ -379,28 +386,28 @@ void runBenchmarkHipV2(benchmark::State& state,
     for(size_t i = 0; i < warmup_size; i++)
     {
         hipLaunchKernelGGL((getBondsResultsGpu), dim3(grid), dim3(threads), 0, 0, inArgs, results, numBonds);
-        HIP_CALL(hipDeviceSynchronize());
+        HIP_CALL(hipStreamSynchronize(stream));
     }
 
     for(auto _ : state)
     {
         auto start = std::chrono::high_resolution_clock::now();
 
-        HIP_CALL(hipMemcpy(discountCurveGpu, inArgsHost.discountCurve, numBonds * sizeof(bondsYieldTermStruct), hipMemcpyHostToDevice));
-        HIP_CALL(hipMemcpy(repoCurveGpu, inArgsHost.repoCurve, numBonds * sizeof(bondsYieldTermStruct), hipMemcpyHostToDevice));
-        HIP_CALL(hipMemcpy(currDateGpu, inArgsHost.currDate, numBonds * sizeof(bondsDateStruct), hipMemcpyHostToDevice));
-        HIP_CALL(hipMemcpy(maturityDateGpu, inArgsHost.maturityDate, numBonds * sizeof(bondsDateStruct), hipMemcpyHostToDevice));
-        HIP_CALL(hipMemcpy(bondCleanPriceGpu, inArgsHost.bondCleanPrice, numBonds * sizeof(dataType), hipMemcpyHostToDevice));
-        HIP_CALL(hipMemcpy(bondGpu, inArgsHost.bond, numBonds * sizeof(bondStruct), hipMemcpyHostToDevice));
-        HIP_CALL(hipMemcpy(dummyStrikeGpu, inArgsHost.dummyStrike, numBonds * sizeof(dataType), hipMemcpyHostToDevice));
+        HIP_CALL(hipMemcpyAsync(discountCurveGpu, inArgsHost.discountCurve, numBonds * sizeof(bondsYieldTermStruct), hipMemcpyHostToDevice, stream));
+        HIP_CALL(hipMemcpyAsync(repoCurveGpu, inArgsHost.repoCurve, numBonds * sizeof(bondsYieldTermStruct), hipMemcpyHostToDevice, stream));
+        HIP_CALL(hipMemcpyAsync(currDateGpu, inArgsHost.currDate, numBonds * sizeof(bondsDateStruct), hipMemcpyHostToDevice, stream));
+        HIP_CALL(hipMemcpyAsync(maturityDateGpu, inArgsHost.maturityDate, numBonds * sizeof(bondsDateStruct), hipMemcpyHostToDevice, stream));
+        HIP_CALL(hipMemcpyAsync(bondCleanPriceGpu, inArgsHost.bondCleanPrice, numBonds * sizeof(dataType), hipMemcpyHostToDevice, stream));
+        HIP_CALL(hipMemcpyAsync(bondGpu, inArgsHost.bond, numBonds * sizeof(bondStruct), hipMemcpyHostToDevice, stream));
+        HIP_CALL(hipMemcpyAsync(dummyStrikeGpu, inArgsHost.dummyStrike, numBonds * sizeof(dataType), hipMemcpyHostToDevice, stream));
 
-        hipLaunchKernelGGL((getBondsResultsGpu), dim3(grid), dim3(threads), 0, 0, inArgs, results, numBonds);
+        hipLaunchKernelGGL((getBondsResultsGpu), dim3(grid), dim3(threads), 0, stream, inArgs, results, numBonds);
 
-        HIP_CALL(hipMemcpy(resultsFromGpu.dirtyPrice, dirtyPriceGpu, numBonds * sizeof(dataType), hipMemcpyDeviceToHost));
-		HIP_CALL(hipMemcpy(resultsFromGpu.accruedAmountCurrDate, accruedAmountCurrDateGpu, numBonds * sizeof(dataType), hipMemcpyDeviceToHost));
-		HIP_CALL(hipMemcpy(resultsFromGpu.cleanPrice, cleanPriceGpu, numBonds * sizeof(dataType), hipMemcpyDeviceToHost));
-		HIP_CALL(hipMemcpy(resultsFromGpu.bondForwardVal, bondForwardValGpu, numBonds * sizeof(dataType), hipMemcpyDeviceToHost));
-        HIP_CALL(hipDeviceSynchronize());
+        HIP_CALL(hipMemcpyAsync(resultsFromGpu.dirtyPrice, dirtyPriceGpu, numBonds * sizeof(dataType), hipMemcpyDeviceToHost, stream));
+		HIP_CALL(hipMemcpyAsync(resultsFromGpu.accruedAmountCurrDate, accruedAmountCurrDateGpu, numBonds * sizeof(dataType), hipMemcpyDeviceToHost, stream));
+		HIP_CALL(hipMemcpyAsync(resultsFromGpu.cleanPrice, cleanPriceGpu, numBonds * sizeof(dataType), hipMemcpyDeviceToHost, stream));
+		HIP_CALL(hipMemcpyAsync(resultsFromGpu.bondForwardVal, bondForwardValGpu, numBonds * sizeof(dataType), hipMemcpyDeviceToHost, stream));
+        HIP_CALL(hipStreamSynchronize(stream));
 
         auto end = std::chrono::high_resolution_clock::now();
         auto elapsed_seconds =
@@ -419,6 +426,7 @@ void runBenchmarkHipV2(benchmark::State& state,
     HIP_CALL(hipFree(accruedAmountCurrDateGpu));
     HIP_CALL(hipFree(cleanPriceGpu));
     HIP_CALL(hipFree(bondForwardValGpu));
+    HIP_CALL(hipStreamDestroy(stream));
 
     free(resultsFromGpu.dirtyPrice);
     free(resultsFromGpu.accruedAmountCurrDate);;

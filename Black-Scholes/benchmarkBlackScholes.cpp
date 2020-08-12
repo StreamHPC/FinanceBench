@@ -299,11 +299,13 @@ void runBenchmarkHipV1(benchmark::State& state,
     optionInputStruct * optionsGpu;
     float * outputValsGpu;
 
+    hipStream_t stream;
+    HIP_CALL(hipStreamCreate(&stream));
     HIP_CALL(hipMalloc(&optionsGpu, numVals * sizeof(optionInputStruct)));
     HIP_CALL(hipMalloc(&outputValsGpu, numVals * sizeof(float)));
 
-    HIP_CALL(hipMemcpy(optionsGpu, values, numVals * sizeof(optionInputStruct), hipMemcpyHostToDevice));
-    HIP_CALL(hipDeviceSynchronize());
+    HIP_CALL(hipMemcpyAsync(optionsGpu, values, numVals * sizeof(optionInputStruct), hipMemcpyHostToDevice, stream));
+    HIP_CALL(hipStreamSynchronize(stream));
 
     dim3 grid((size_t)ceil((float)numVals / (float)THREAD_BLOCK_SIZE), 1, 1);
     dim3 threads( THREAD_BLOCK_SIZE, 1, 1);
@@ -311,18 +313,18 @@ void runBenchmarkHipV1(benchmark::State& state,
     // Warm-up
     for(size_t i = 0; i < warmup_size; i++)
     {
-        hipLaunchKernelGGL((getOutValOption), dim3(grid), dim3(threads), 0, 0, optionsGpu, outputValsGpu, numVals);
+        hipLaunchKernelGGL((getOutValOption), dim3(grid), dim3(threads), 0, stream, optionsGpu, outputValsGpu, numVals);
         HIP_CALL(hipPeekAtLastError());
-        HIP_CALL(hipDeviceSynchronize());
+        HIP_CALL(hipStreamSynchronize(stream));
     }
 
     for(auto _ : state)
     {
         auto start = std::chrono::high_resolution_clock::now();
 
-        hipLaunchKernelGGL((getOutValOption), dim3(grid), dim3(threads), 0, 0, optionsGpu, outputValsGpu, numVals);
+        hipLaunchKernelGGL((getOutValOption), dim3(grid), dim3(threads), 0, stream, optionsGpu, outputValsGpu, numVals);
         HIP_CALL(hipPeekAtLastError());
-        HIP_CALL(hipDeviceSynchronize());
+        HIP_CALL(hipStreamSynchronize(stream));
 
         auto end = std::chrono::high_resolution_clock::now();
         auto elapsed_seconds =
@@ -332,6 +334,7 @@ void runBenchmarkHipV1(benchmark::State& state,
 
     HIP_CALL(hipFree(optionsGpu));
     HIP_CALL(hipFree(outputValsGpu));
+    HIP_CALL(hipStreamDestroy(stream));
 
     delete [] values;
     free(outputVals);
@@ -349,6 +352,8 @@ void runBenchmarkHipV2(benchmark::State& state,
     optionInputStruct * optionsGpu;
     float * outputValsGpu;
 
+    hipStream_t stream;
+    HIP_CALL(hipStreamCreate(&stream));
     HIP_CALL(hipMalloc(&optionsGpu, numVals * sizeof(optionInputStruct)));
     HIP_CALL(hipMalloc(&outputValsGpu, numVals * sizeof(float)));
 
@@ -358,19 +363,19 @@ void runBenchmarkHipV2(benchmark::State& state,
     // Warm-up
     for(size_t i = 0; i < warmup_size; i++)
     {
-        hipLaunchKernelGGL((getOutValOption), dim3(grid), dim3(threads), 0, 0, optionsGpu, outputValsGpu, numVals);
-        HIP_CALL(hipDeviceSynchronize());
+        hipLaunchKernelGGL((getOutValOption), dim3(grid), dim3(threads), 0, stream, optionsGpu, outputValsGpu, numVals);
+        HIP_CALL(hipStreamSynchronize(stream));
     }
 
     for(auto _ : state)
     {
         auto start = std::chrono::high_resolution_clock::now();
 
-        HIP_CALL(hipMemcpy(optionsGpu, values, numVals * sizeof(optionInputStruct), hipMemcpyHostToDevice));
-        hipLaunchKernelGGL((getOutValOption), dim3(grid), dim3(threads), 0, 0, optionsGpu, outputValsGpu, numVals);
+        HIP_CALL(hipMemcpyAsync(optionsGpu, values, numVals * sizeof(optionInputStruct), hipMemcpyHostToDevice, stream));
+        hipLaunchKernelGGL((getOutValOption), dim3(grid), dim3(threads), 0, stream, optionsGpu, outputValsGpu, numVals);
         HIP_CALL(hipPeekAtLastError());
-        HIP_CALL(hipMemcpy(outputVals, outputValsGpu, numVals * sizeof(float), hipMemcpyDeviceToHost));
-        HIP_CALL(hipDeviceSynchronize());
+        HIP_CALL(hipMemcpyAsync(outputVals, outputValsGpu, numVals * sizeof(float), hipMemcpyDeviceToHost, stream));
+        HIP_CALL(hipStreamSynchronize(stream));
 
         auto end = std::chrono::high_resolution_clock::now();
         auto elapsed_seconds =
@@ -380,6 +385,7 @@ void runBenchmarkHipV2(benchmark::State& state,
 
     HIP_CALL(hipFree(optionsGpu));
     HIP_CALL(hipFree(outputValsGpu));
+    HIP_CALL(hipStreamDestroy(stream));
 
     delete [] values;
     free(outputVals);
@@ -397,11 +403,13 @@ void runBenchmarkHipV3(benchmark::State& state,
     optionInputStruct * optionsGpu;
     float * outputValsGpu;
 
+    hipStream_t stream;
+    HIP_CALL(hipStreamCreate(&stream));
     HIP_CALL(hipMalloc(&optionsGpu, numVals * sizeof(optionInputStruct)));
     HIP_CALL(hipMalloc(&outputValsGpu, numVals * sizeof(float)));
 
-    HIP_CALL(hipMemcpy(optionsGpu, values, numVals * sizeof(optionInputStruct), hipMemcpyHostToDevice));
-    HIP_CALL(hipDeviceSynchronize());
+    HIP_CALL(hipMemcpyAsync(optionsGpu, values, numVals * sizeof(optionInputStruct), hipMemcpyHostToDevice, stream));
+    HIP_CALL(hipStreamSynchronize(stream));
 
     dim3 grid((size_t)ceil((float)numVals / (float)THREAD_BLOCK_SIZE), 1, 1);
     dim3 threads( THREAD_BLOCK_SIZE, 1, 1);
@@ -409,18 +417,18 @@ void runBenchmarkHipV3(benchmark::State& state,
     // Warm-up
     for(size_t i = 0; i < warmup_size; i++)
     {
-        hipLaunchKernelGGL((getOutValOptionOpt), dim3(grid), dim3(threads), 0, 0, optionsGpu, outputValsGpu, numVals);
+        hipLaunchKernelGGL((getOutValOptionOpt), dim3(grid), dim3(threads), 0, stream, optionsGpu, outputValsGpu, numVals);
         HIP_CALL(hipPeekAtLastError());
-        HIP_CALL(hipDeviceSynchronize());
+        HIP_CALL(hipStreamSynchronize(stream));
     }
 
     for(auto _ : state)
     {
         auto start = std::chrono::high_resolution_clock::now();
 
-        hipLaunchKernelGGL((getOutValOptionOpt), dim3(grid), dim3(threads), 0, 0, optionsGpu, outputValsGpu, numVals);
+        hipLaunchKernelGGL((getOutValOptionOpt), dim3(grid), dim3(threads), 0, stream, optionsGpu, outputValsGpu, numVals);
         HIP_CALL(hipPeekAtLastError());
-        HIP_CALL(hipDeviceSynchronize());
+        HIP_CALL(hipStreamSynchronize(stream));
 
         auto end = std::chrono::high_resolution_clock::now();
         auto elapsed_seconds =
@@ -430,6 +438,7 @@ void runBenchmarkHipV3(benchmark::State& state,
 
     HIP_CALL(hipFree(optionsGpu));
     HIP_CALL(hipFree(outputValsGpu));
+    HIP_CALL(hipStreamDestroy(stream));
 
     delete [] values;
     free(outputVals);
@@ -447,6 +456,8 @@ void runBenchmarkHipV4(benchmark::State& state,
     optionInputStruct * optionsGpu;
     float * outputValsGpu;
 
+    hipStream_t stream;
+    HIP_CALL(hipStreamCreate(&stream));
     HIP_CALL(hipMalloc(&optionsGpu, numVals * sizeof(optionInputStruct)));
     HIP_CALL(hipMalloc(&outputValsGpu, numVals * sizeof(float)));
 
@@ -456,19 +467,19 @@ void runBenchmarkHipV4(benchmark::State& state,
     // Warm-up
     for(size_t i = 0; i < warmup_size; i++)
     {
-        hipLaunchKernelGGL((getOutValOptionOpt), dim3(grid), dim3(threads), 0, 0, optionsGpu, outputValsGpu, numVals);
-        HIP_CALL(hipDeviceSynchronize());
+        hipLaunchKernelGGL((getOutValOptionOpt), dim3(grid), dim3(threads), 0, stream, optionsGpu, outputValsGpu, numVals);
+        HIP_CALL(hipStreamSynchronize(stream));
     }
 
     for(auto _ : state)
     {
         auto start = std::chrono::high_resolution_clock::now();
 
-        HIP_CALL(hipMemcpy(optionsGpu, values, numVals * sizeof(optionInputStruct), hipMemcpyHostToDevice));
-        hipLaunchKernelGGL((getOutValOptionOpt), dim3(grid), dim3(threads), 0, 0, optionsGpu, outputValsGpu, numVals);
+        HIP_CALL(hipMemcpyAsync(optionsGpu, values, numVals * sizeof(optionInputStruct), hipMemcpyHostToDevice, stream));
+        hipLaunchKernelGGL((getOutValOptionOpt), dim3(grid), dim3(threads), 0, stream, optionsGpu, outputValsGpu, numVals);
         HIP_CALL(hipPeekAtLastError());
-        HIP_CALL(hipMemcpy(outputVals, outputValsGpu, numVals * sizeof(float), hipMemcpyDeviceToHost));
-        HIP_CALL(hipDeviceSynchronize());
+        HIP_CALL(hipMemcpyAsync(outputVals, outputValsGpu, numVals * sizeof(float), hipMemcpyDeviceToHost, stream));
+        HIP_CALL(hipStreamSynchronize(stream));
 
         auto end = std::chrono::high_resolution_clock::now();
         auto elapsed_seconds =
@@ -478,6 +489,7 @@ void runBenchmarkHipV4(benchmark::State& state,
 
     HIP_CALL(hipFree(optionsGpu));
     HIP_CALL(hipFree(outputValsGpu));
+    HIP_CALL(hipStreamDestroy(stream));
 
     delete [] values;
     free(outputVals);
