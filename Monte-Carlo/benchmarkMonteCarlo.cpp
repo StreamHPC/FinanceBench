@@ -172,7 +172,7 @@ void runBenchmarkHipV1(benchmark::State& state,
     times = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
 
     hipStream_t stream;
-    HIP_CALL(hipStreamCreate(&stream));
+    HIP_CALL(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
 
     HIP_CALL(hipMalloc((void **)&devStates, size * sizeof(hiprandState)));
     HIP_CALL(hipMalloc(&samplePricesGpu, NUM_OPTIONS * size * sizeof(dataType)));
@@ -256,7 +256,7 @@ void runBenchmarkHipV2(benchmark::State& state,
     times = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
 
     hipStream_t stream;
-    HIP_CALL(hipStreamCreate(&stream));
+    HIP_CALL(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
 
     HIP_CALL(hipMalloc((void **)&devStates, size * sizeof(hiprandState)));
     HIP_CALL(hipMalloc(&samplePricesGpu, NUM_OPTIONS * size * sizeof(dataType)));
@@ -346,7 +346,7 @@ void runBenchmarkHipV3(benchmark::State& state,
     times = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
 
     hipStream_t stream;
-    HIP_CALL(hipStreamCreate(&stream));
+    HIP_CALL(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
 
     #if defined(__NVCC__)
     HIP_CALL(hipMalloc((void **)&devStates, size * sizeof(hiprandStatePhilox4_32_10_t)));
@@ -435,7 +435,7 @@ void runBenchmarkHipV4(benchmark::State& state,
     times = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
 
     hipStream_t stream;
-    HIP_CALL(hipStreamCreate(&stream));
+    HIP_CALL(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
 
     #if defined(__NVCC__)
     HIP_CALL(hipMalloc((void **)&devStates, size * sizeof(hiprandStatePhilox4_32_10_t)));

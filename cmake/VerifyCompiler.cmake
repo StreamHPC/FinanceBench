@@ -30,4 +30,4 @@ else()
     message(FATAL_ERROR "HIP_COMPILER must be 'hcc' or 'clang' (AMD ROCm platform) or `nvcc` (NVIDIA CUDA platform).")
 endif()
 
-STRING(REGEX REPLACE "/hip" "" ROCM_ROOT_PATH ${HIP_ROOT_DIR})
+set(ROCM_ROOT_PATH "/opt/rocm")

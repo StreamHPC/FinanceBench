@@ -9,6 +9,14 @@ if(NOT Git_FOUND)
     message(FATAL_ERROR "Please ensure Git is installed on the system")
 endif()
 
+find_package(OpenMP REQUIRED)
+
+if(OPENMP_FOUND)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+endif()
+
 # For downloading, building, and installing required dependencies
 include(cmake/DownloadProject.cmake)
 

@@ -300,7 +300,7 @@ void runBenchmarkHipV1(benchmark::State& state,
     float * outputValsGpu;
 
     hipStream_t stream;
-    HIP_CALL(hipStreamCreate(&stream));
+    HIP_CALL(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
     HIP_CALL(hipMalloc(&optionsGpu, numVals * sizeof(optionInputStruct)));
     HIP_CALL(hipMalloc(&outputValsGpu, numVals * sizeof(float)));
 
@@ -353,7 +353,7 @@ void runBenchmarkHipV2(benchmark::State& state,
     float * outputValsGpu;
 
     hipStream_t stream;
-    HIP_CALL(hipStreamCreate(&stream));
+    HIP_CALL(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
     HIP_CALL(hipMalloc(&optionsGpu, numVals * sizeof(optionInputStruct)));
     HIP_CALL(hipMalloc(&outputValsGpu, numVals * sizeof(float)));
 
@@ -404,7 +404,7 @@ void runBenchmarkHipV3(benchmark::State& state,
     float * outputValsGpu;
 
     hipStream_t stream;
-    HIP_CALL(hipStreamCreate(&stream));
+    HIP_CALL(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
     HIP_CALL(hipMalloc(&optionsGpu, numVals * sizeof(optionInputStruct)));
     HIP_CALL(hipMalloc(&outputValsGpu, numVals * sizeof(float)));
 
@@ -457,7 +457,7 @@ void runBenchmarkHipV4(benchmark::State& state,
     float * outputValsGpu;
 
     hipStream_t stream;
-    HIP_CALL(hipStreamCreate(&stream));
+    HIP_CALL(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
     HIP_CALL(hipMalloc(&optionsGpu, numVals * sizeof(optionInputStruct)));
     HIP_CALL(hipMalloc(&outputValsGpu, numVals * sizeof(float)));
 

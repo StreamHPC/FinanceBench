@@ -47,7 +47,6 @@ if(BUILD_HIP)
       PUBLIC
         ${ROCM_ROOT_PATH}/include
         ${ROCM_ROOT_PATH}/hiprand/include
-        ${ROCM_ROOT_PATH}/hiprand/include/hiprand
         ${ROCM_ROOT_PATH}/rocrand/include
     )
     #target_link_libraries(monteCarlo monteCarloCuda)

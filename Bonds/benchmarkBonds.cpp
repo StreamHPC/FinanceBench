@@ -232,7 +232,7 @@ void runBenchmarkHipV1(benchmark::State& state,
     dataType * bondForwardValGpu;
 
     hipStream_t stream;
-    HIP_CALL(hipStreamCreate(&stream));
+    HIP_CALL(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
 
     HIP_CALL(hipMalloc(&discountCurveGpu, numBonds * sizeof(bondsYieldTermStruct)));
     HIP_CALL(hipMalloc(&repoCurveGpu, numBonds * sizeof(bondsYieldTermStruct)));
@@ -350,7 +350,7 @@ void runBenchmarkHipV2(benchmark::State& state,
     dataType * bondForwardValGpu;
 
     hipStream_t stream;
-    HIP_CALL(hipStreamCreate(&stream));
+    HIP_CALL(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
 
     HIP_CALL(hipMalloc(&discountCurveGpu, numBonds * sizeof(bondsYieldTermStruct)));
     HIP_CALL(hipMalloc(&repoCurveGpu, numBonds * sizeof(bondsYieldTermStruct)));

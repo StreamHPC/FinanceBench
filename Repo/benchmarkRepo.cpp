@@ -268,7 +268,7 @@ void runBenchmarkHipV1(benchmark::State& state,
     resultsStruct resultsGpu;
 
     hipStream_t stream;
-    HIP_CALL(hipStreamCreate(&stream));
+    HIP_CALL(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
 
     HIP_CALL(hipMalloc(&(resultsGpu.dirtyPrice), numRepos * sizeof(dataType)));
     HIP_CALL(hipMalloc(&(resultsGpu.accruedAmountSettlement), numRepos * sizeof(dataType)));
@@ -398,7 +398,7 @@ void runBenchmarkHipV2(benchmark::State& state,
     resultsStruct resultsGpu;
 
     hipStream_t stream;
-    HIP_CALL(hipStreamCreate(&stream));
+    HIP_CALL(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
 
     HIP_CALL(hipMalloc(&(resultsGpu.dirtyPrice), numRepos * sizeof(dataType)));
     HIP_CALL(hipMalloc(&(resultsGpu.accruedAmountSettlement), numRepos * sizeof(dataType)));
