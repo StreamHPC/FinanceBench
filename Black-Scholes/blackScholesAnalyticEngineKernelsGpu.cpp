@@ -426,3 +426,77 @@ __global__ void getOutValOptionOpt(optionInputStruct * options,
 		outputVals[optionNum] = resultVal;
 	}
 }
+
+__global__ void getOutValOptionOpt(char * type,
+                                   float * data,
+                                   /*float * strike,
+                                   float * spot,
+                                   float * q,
+                                   float * r,
+                                   float * t,
+                                   float * vol,*/
+                                   //float * value,
+                                   //float * tol,
+                                   float * outputVals,
+                                   int numVals)
+{
+    int optionNum = blockIdx.x * blockDim.x + threadIdx.x;
+
+	//check if within current options
+	if(optionNum < numVals)
+	{
+        int _type = type[optionNum];
+        float _strike = data[optionNum];
+        float _spot = data[numVals + optionNum];
+        float _q = data[(numVals * 2) + optionNum];
+        float _r = data[(numVals * 3) + optionNum];
+        float _t = data[(numVals * 4) + optionNum];
+        float _vol = data[(numVals * 5) + optionNum];
+
+		payoffStruct currPayoff;
+		currPayoff.type = _type;
+		currPayoff.strike = _strike;
+
+		yieldTermStruct qTS;
+		qTS.timeYearFraction = _t;
+		qTS.forward = _q;
+
+		yieldTermStruct rTS;
+		rTS.timeYearFraction = _t;
+		rTS.forward = _r;
+
+		blackVolStruct volTS;
+		volTS.timeYearFraction = _t;
+		volTS.volatility = _vol;
+
+		blackScholesMertStruct stochProcess;
+		stochProcess.x0 = _spot;
+		stochProcess.dividendTS = qTS;
+		stochProcess.riskFreeTS = rTS;
+		stochProcess.blackVolTS = volTS;
+
+		optionStruct currOption;
+		currOption.payoff = currPayoff;
+		currOption.yearFractionTime = _t;
+		currOption.pricingEngine = stochProcess;
+
+		float variance = getBlackVolBlackVar(currOption.pricingEngine.blackVolTS);
+		float dividendDiscount = getDiscountOnDividendYield(currOption.yearFractionTime, currOption.pricingEngine.dividendTS);
+		float riskFreeDiscount = getDiscountOnRiskFreeRate(currOption.yearFractionTime, currOption.pricingEngine.riskFreeTS);
+		float __spot = currOption.pricingEngine.x0;
+
+		float forwardPrice = __spot * dividendDiscount / riskFreeDiscount;
+
+		//declare the blackCalcStruct
+		blackCalcStruct blackCalc;
+
+		//initialize the calculator
+		initBlackCalculatorV2(blackCalc, currOption.payoff, forwardPrice, sqrt(variance), riskFreeDiscount);
+
+		//retrieve the results values
+		float resultVal = getResultVal(blackCalc);
+
+		//write the resulting value to global memory
+		outputVals[optionNum] = resultVal;
+	}
+}
