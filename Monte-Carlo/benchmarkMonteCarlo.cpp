@@ -55,16 +55,16 @@ void runBenchmarkCpu(benchmark::State& state,
                      size_t size)
 {
     monteCarloOptionStruct * optionStructs;
-    optionStructs = (monteCarloOptionStruct *)malloc(NUM_OPTIONS * sizeof(monteCarloOptionStruct));
+    optionStructs = new monteCarloOptionStruct[NUM_OPTIONS];
     initOptions(optionStructs);
 
     dataType * samplePrices;
     dataType * sampleWeights;
     dataType * times;
 
-    samplePrices = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
-    sampleWeights = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
-    times = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
+    samplePrices = new dataType[size * NUM_OPTIONS];
+    sampleWeights = new dataType[size * NUM_OPTIONS];
+    times = new dataType[size * NUM_OPTIONS];
 
     // Warm-up
     for(size_t i = 0; i < warmup_size; i++)
@@ -92,10 +92,10 @@ void runBenchmarkCpu(benchmark::State& state,
         state.SetIterationTime(elapsed_seconds.count());
     }
 
-    free(samplePrices);
-    free(sampleWeights);
-    free(times);
-    free(optionStructs);
+    delete [] samplePrices;
+    delete [] sampleWeights;
+    delete [] times;
+    delete [] optionStructs;
 }
 
 void runBenchmarkOpenMP(benchmark::State& state,
@@ -103,7 +103,7 @@ void runBenchmarkOpenMP(benchmark::State& state,
                         size_t size)
 {
     monteCarloOptionStruct * optionStructs;
-    optionStructs = (monteCarloOptionStruct *)malloc(NUM_OPTIONS * sizeof(monteCarloOptionStruct));
+    optionStructs = new monteCarloOptionStruct[NUM_OPTIONS];
     initOptions(optionStructs);
 
     dataType * samplePrices;
@@ -111,9 +111,9 @@ void runBenchmarkOpenMP(benchmark::State& state,
     dataType * times;
 
     //allocate space for data on CPU
-    samplePrices = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
-    sampleWeights = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
-    times = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
+    samplePrices = new dataType[size * NUM_OPTIONS];
+    sampleWeights = new dataType[size * NUM_OPTIONS];
+    times = new dataType[size * NUM_OPTIONS];
 
     // Warm-up
     for(size_t i = 0; i < warmup_size; i++)
@@ -141,10 +141,10 @@ void runBenchmarkOpenMP(benchmark::State& state,
         state.SetIterationTime(elapsed_seconds.count());
     }
 
-    free(samplePrices);
-    free(sampleWeights);
-    free(times);
-    free(optionStructs);
+    delete [] samplePrices;
+    delete [] sampleWeights;
+    delete [] times;
+    delete [] optionStructs;
 }
 
 #ifdef BUILD_HIP
@@ -153,7 +153,7 @@ void runBenchmarkHipV1(benchmark::State& state,
                         size_t size)
 {
     monteCarloOptionStruct * optionStructs;
-    optionStructs = (monteCarloOptionStruct *)malloc(NUM_OPTIONS * sizeof(monteCarloOptionStruct));
+    optionStructs = new monteCarloOptionStruct[NUM_OPTIONS];
     initOptions(optionStructs);
 
     dataType * samplePrices;
@@ -167,9 +167,9 @@ void runBenchmarkHipV1(benchmark::State& state,
     monteCarloOptionStruct * optionStructsGpu;
 
     //allocate space for data on CPU
-    samplePrices = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
-    sampleWeights = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
-    times = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
+    samplePrices = new dataType[size * NUM_OPTIONS];
+    sampleWeights = new dataType[size * NUM_OPTIONS];
+    times = new dataType[size * NUM_OPTIONS];
 
     hipStream_t stream;
     HIP_CALL(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
@@ -226,10 +226,10 @@ void runBenchmarkHipV1(benchmark::State& state,
     HIP_CALL(hipFree(timesGpu));
     HIP_CALL(hipFree(optionStructsGpu));
 
-    free(samplePrices);
-    free(sampleWeights);
-    free(times);
-    free(optionStructs);
+    delete [] samplePrices;
+    delete [] sampleWeights;
+    delete [] times;
+    delete [] optionStructs;
 }
 
 void runBenchmarkHipV2(benchmark::State& state,
@@ -237,7 +237,7 @@ void runBenchmarkHipV2(benchmark::State& state,
                         size_t size)
 {
     monteCarloOptionStruct * optionStructs;
-    optionStructs = (monteCarloOptionStruct *)malloc(NUM_OPTIONS * sizeof(monteCarloOptionStruct));
+    optionStructs = new monteCarloOptionStruct[NUM_OPTIONS];
     initOptions(optionStructs);
 
     dataType * samplePrices;
@@ -251,9 +251,9 @@ void runBenchmarkHipV2(benchmark::State& state,
     monteCarloOptionStruct * optionStructsGpu;
 
     //allocate space for data on CPU
-    samplePrices = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
-    sampleWeights = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
-    times = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
+    samplePrices = new dataType[size * NUM_OPTIONS];
+    sampleWeights = new dataType[size * NUM_OPTIONS];
+    times = new dataType[size * NUM_OPTIONS];
 
     hipStream_t stream;
     HIP_CALL(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
@@ -312,10 +312,10 @@ void runBenchmarkHipV2(benchmark::State& state,
     HIP_CALL(hipFree(timesGpu));
     HIP_CALL(hipFree(optionStructsGpu));
 
-    free(samplePrices);
-    free(sampleWeights);
-    free(times);
-    free(optionStructs);
+    delete [] samplePrices;
+    delete [] sampleWeights;
+    delete [] times;
+    delete [] optionStructs;
 }
 
 void runBenchmarkHipV3(benchmark::State& state,
@@ -323,7 +323,7 @@ void runBenchmarkHipV3(benchmark::State& state,
                         size_t size)
 {
     monteCarloOptionStruct * optionStructs;
-    optionStructs = (monteCarloOptionStruct *)malloc(NUM_OPTIONS * sizeof(monteCarloOptionStruct));
+    optionStructs = new monteCarloOptionStruct[NUM_OPTIONS];
     initOptions(optionStructs);
 
     dataType * samplePrices;
@@ -341,9 +341,9 @@ void runBenchmarkHipV3(benchmark::State& state,
     monteCarloOptionStruct * optionStructsGpu;
 
     //allocate space for data on CPU
-    samplePrices = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
-    sampleWeights = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
-    times = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
+    samplePrices = new dataType[size * NUM_OPTIONS];
+    sampleWeights = new dataType[size * NUM_OPTIONS];
+    times = new dataType[size * NUM_OPTIONS];
 
     hipStream_t stream;
     HIP_CALL(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
@@ -401,10 +401,10 @@ void runBenchmarkHipV3(benchmark::State& state,
     HIP_CALL(hipFree(optionStructsGpu));
     HIP_CALL(hipStreamDestroy(stream));
 
-    free(samplePrices);
-    free(sampleWeights);
-    free(times);
-    free(optionStructs);
+    delete [] samplePrices;
+    delete [] sampleWeights;
+    delete [] times;
+    delete [] optionStructs;
 }
 
 void runBenchmarkHipV4(benchmark::State& state,
@@ -412,7 +412,7 @@ void runBenchmarkHipV4(benchmark::State& state,
                         size_t size)
 {
     monteCarloOptionStruct * optionStructs;
-    optionStructs = (monteCarloOptionStruct *)malloc(NUM_OPTIONS * sizeof(monteCarloOptionStruct));
+    optionStructs = new monteCarloOptionStruct[NUM_OPTIONS];
     initOptions(optionStructs);
 
     dataType * samplePrices;
@@ -430,9 +430,9 @@ void runBenchmarkHipV4(benchmark::State& state,
     monteCarloOptionStruct * optionStructsGpu;
 
     //allocate space for data on CPU
-    samplePrices = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
-    sampleWeights = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
-    times = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
+    samplePrices = new dataType[size * NUM_OPTIONS];
+    sampleWeights = new dataType[size * NUM_OPTIONS];
+    times = new dataType[size * NUM_OPTIONS];
 
     hipStream_t stream;
     HIP_CALL(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
@@ -493,10 +493,10 @@ void runBenchmarkHipV4(benchmark::State& state,
     HIP_CALL(hipFree(optionStructsGpu));
     HIP_CALL(hipStreamDestroy(stream));
 
-    free(samplePrices);
-    free(sampleWeights);
-    free(times);
-    free(optionStructs);
+    delete [] samplePrices;
+    delete [] sampleWeights;
+    delete [] times;
+    delete [] optionStructs;
 }
 #endif
 

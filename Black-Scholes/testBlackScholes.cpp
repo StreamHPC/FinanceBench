@@ -29,8 +29,8 @@ TEST(BlackScholes, OpenMP)
 
     initOptions(values, numVals);
 
-    float * outputCpu = (float *)malloc(numVals * sizeof(float));
-    float * outputMp = (float *)malloc(numVals * sizeof(float));
+    float * outputCpu = new float[numVals];
+    float * outputMp = new float[numVals];
 
     getOutValOptionCpu(values, outputCpu, numVals);
     getOutValOptionOpenMP(values, outputMp, numVals);
@@ -41,8 +41,8 @@ TEST(BlackScholes, OpenMP)
     }
 
     delete [] values;
-    free(outputCpu);
-    free(outputMp);
+    delete [] outputCpu;
+    delete [] outputMp;
 }
 
 #ifdef BUILD_HIP
@@ -53,8 +53,8 @@ TEST(BlackScholes, Hip)
 
     initOptions(values, numVals);
 
-    float * outputCpu = (float *)malloc(numVals * sizeof(float));
-    float * outputGpu = (float *)malloc(numVals * sizeof(float));
+    float * outputCpu = new float[numVals];
+    float * outputGpu = new float[numVals];
     optionInputStruct * optionsGpu;
     float * outputValsGpu;
 
@@ -81,8 +81,8 @@ TEST(BlackScholes, Hip)
     HIP_CALL(hipFree(outputValsGpu));
 
     delete [] values;
-    free(outputCpu);
-    free(outputGpu);
+    delete [] outputCpu;
+    delete [] outputGpu;
 }
 
 TEST(BlackScholes, HipOpt)
@@ -92,8 +92,8 @@ TEST(BlackScholes, HipOpt)
 
     initOptions(values, numVals);
 
-    float * outputCpu = (float *)malloc(numVals * sizeof(float));
-    float * outputGpu = (float *)malloc(numVals * sizeof(float));
+    float * outputCpu = new float[numVals];
+    float * outputGpu = new float[numVals];
     optionInputStruct * optionsGpu;
     float * outputValsGpu;
 
@@ -120,31 +120,31 @@ TEST(BlackScholes, HipOpt)
     HIP_CALL(hipFree(outputValsGpu));
 
     delete [] values;
-    free(outputCpu);
-    free(outputGpu);
+    delete [] outputCpu;
+    delete [] outputGpu;
 }
 
 TEST(BlackScholes, HipOpt2)
 {
     int numVals = 1024;
-    char * type = (char *)malloc(numVals * sizeof(char));
-    float * strike = (float *)malloc(numVals * sizeof(float));
-    float * spot = (float *)malloc(numVals * sizeof(float));
-    float * q = (float *)malloc(numVals * sizeof(float));
-    float * r = (float *)malloc(numVals * sizeof(float));
-    float * t = (float *)malloc(numVals * sizeof(float));
-    float * vol = (float *)malloc(numVals * sizeof(float));
-    float * value = (float *)malloc(numVals * sizeof(float));
-    float * tol = (float *)malloc(numVals * sizeof(float));
-    float * values = (float *)malloc(6 * numVals * sizeof(float));
+    char * type = new char[numVals];
+    float * strike = new float[numVals];
+    float * spot = new float[numVals];
+    float * q = new float[numVals];
+    float * r = new float[numVals];
+    float * t = new float[numVals];
+    float * vol = new float[numVals];
+    float * value = new float[numVals];
+    float * tol = new float[numVals];
+    float * values = new float[6 * numVals];
 
     initOptions(type, strike, spot, q, r, t, vol, value, tol, numVals);
 
     optionInputStruct * v = new optionInputStruct[numVals];
 
     initOptions(v, numVals);
-    float * outputCpu = (float *)malloc(numVals * sizeof(float));
-    float * outputGpu = (float *)malloc(numVals * sizeof(float));
+    float * outputCpu = new float[numVals];
+    float * outputGpu = new float[numVals];
 
     getOutValOptionCpu(v, outputCpu, numVals);
 
@@ -186,17 +186,17 @@ TEST(BlackScholes, HipOpt2)
     HIP_CALL(hipFree(outputValsGpu));
 
     delete [] v;
-    free(type);
-    free(strike);
-    free(spot);
-    free(q);
-    free(r);
-    free(t);
-    free(vol);
-    free(value);
-    free(tol);
-    free(values);
-    free(outputCpu);
-    free(outputGpu);
+    delete [] type;
+    delete [] strike;
+    delete [] spot;
+    delete [] q;
+    delete [] r;
+    delete [] t;
+    delete [] vol;
+    delete [] value;
+    delete [] tol;
+    delete [] values;
+    delete [] outputCpu;
+    delete [] outputGpu;
 }
 #endif

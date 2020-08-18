@@ -103,31 +103,31 @@ void runBenchmarkCpu(benchmark::State& state,
     int numRepos = size;
 
     inArgsStruct inArgsHost;
-    inArgsHost.discountCurve = (repoYieldTermStruct *)malloc(numRepos * sizeof(repoYieldTermStruct));
-    inArgsHost.repoCurve = (repoYieldTermStruct *)malloc(numRepos * sizeof(repoYieldTermStruct));
-    inArgsHost.settlementDate = (repoDateStruct *)malloc(numRepos * sizeof(repoDateStruct));
-    inArgsHost.deliveryDate = (repoDateStruct *)malloc(numRepos * sizeof(repoDateStruct));
-    inArgsHost.maturityDate = (repoDateStruct *)malloc(numRepos * sizeof(repoDateStruct));
-    inArgsHost.repoDeliveryDate = (repoDateStruct *)malloc(numRepos * sizeof(repoDateStruct));
-    inArgsHost.bondCleanPrice = (dataType *)malloc(numRepos * sizeof(dataType));
-    inArgsHost.bond = (bondStruct *)malloc(numRepos * sizeof(bondStruct));
-    inArgsHost.dummyStrike = (dataType *)malloc(numRepos * sizeof(dataType));
+    inArgsHost.discountCurve = new repoYieldTermStruct[numRepos];
+    inArgsHost.repoCurve = new repoYieldTermStruct[numRepos];
+    inArgsHost.settlementDate = new repoDateStruct[numRepos];
+    inArgsHost.deliveryDate = new repoDateStruct[numRepos];
+    inArgsHost.maturityDate = new repoDateStruct[numRepos];
+    inArgsHost.repoDeliveryDate = new repoDateStruct[numRepos];
+    inArgsHost.bondCleanPrice = new dataType[numRepos];
+    inArgsHost.bond = new bondStruct[numRepos];
+    inArgsHost.dummyStrike = new dataType[numRepos];
 
     initArgs(inArgsHost, numRepos);
 
     resultsStruct resultsHost;
-    resultsHost.dirtyPrice = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.accruedAmountSettlement = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.accruedAmountDeliveryDate = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.cleanPrice = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.forwardSpotIncome = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.underlyingBondFwd = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.repoNpv = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.repoCleanForwardPrice = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.repoDirtyForwardPrice = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.repoImpliedYield = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.marketRepoRate = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.bondForwardVal = (dataType *)malloc(numRepos * sizeof(dataType));
+    resultsHost.dirtyPrice = new dataType[numRepos];
+    resultsHost.accruedAmountSettlement = new dataType[numRepos];
+    resultsHost.accruedAmountDeliveryDate = new dataType[numRepos];
+    resultsHost.cleanPrice = new dataType[numRepos];
+    resultsHost.forwardSpotIncome = new dataType[numRepos];
+    resultsHost.underlyingBondFwd = new dataType[numRepos];
+    resultsHost.repoNpv = new dataType[numRepos];
+    resultsHost.repoCleanForwardPrice = new dataType[numRepos];
+    resultsHost.repoDirtyForwardPrice = new dataType[numRepos];
+    resultsHost.repoImpliedYield = new dataType[numRepos];
+    resultsHost.marketRepoRate = new dataType[numRepos];
+    resultsHost.bondForwardVal = new dataType[numRepos];
 
     // Warm-up
     for(size_t i = 0; i < warmup_size; i++)
@@ -147,28 +147,28 @@ void runBenchmarkCpu(benchmark::State& state,
         state.SetIterationTime(elapsed_seconds.count());
     }
 
-    free(resultsHost.dirtyPrice);
-    free(resultsHost.accruedAmountSettlement);
-    free(resultsHost.accruedAmountDeliveryDate);
-    free(resultsHost.cleanPrice);
-    free(resultsHost.forwardSpotIncome);
-    free(resultsHost.underlyingBondFwd);
-    free(resultsHost.repoNpv);
-    free(resultsHost.repoCleanForwardPrice);
-    free(resultsHost.repoDirtyForwardPrice);
-    free(resultsHost.repoImpliedYield);
-    free(resultsHost.marketRepoRate);
-    free(resultsHost.bondForwardVal);
+    delete [] resultsHost.dirtyPrice;
+    delete [] resultsHost.accruedAmountSettlement;
+    delete [] resultsHost.accruedAmountDeliveryDate;
+    delete [] resultsHost.cleanPrice;
+    delete [] resultsHost.forwardSpotIncome;
+    delete [] resultsHost.underlyingBondFwd;
+    delete [] resultsHost.repoNpv;
+    delete [] resultsHost.repoCleanForwardPrice;
+    delete [] resultsHost.repoDirtyForwardPrice;
+    delete [] resultsHost.repoImpliedYield;
+    delete [] resultsHost.marketRepoRate;
+    delete [] resultsHost.bondForwardVal;
 
-    free(inArgsHost.discountCurve);
-    free(inArgsHost.repoCurve);
-    free(inArgsHost.settlementDate);
-    free(inArgsHost.deliveryDate);
-    free(inArgsHost.maturityDate);
-    free(inArgsHost.repoDeliveryDate);
-    free(inArgsHost.bondCleanPrice);
-    free(inArgsHost.bond);
-    free(inArgsHost.dummyStrike);
+    delete [] inArgsHost.discountCurve;
+    delete [] inArgsHost.repoCurve;
+    delete [] inArgsHost.settlementDate;
+    delete [] inArgsHost.deliveryDate;
+    delete [] inArgsHost.maturityDate;
+    delete [] inArgsHost.repoDeliveryDate;
+    delete [] inArgsHost.bondCleanPrice;
+    delete [] inArgsHost.bond;
+    delete [] inArgsHost.dummyStrike;
 }
 
 void runBenchmarkOpenMP(benchmark::State& state,
@@ -177,31 +177,31 @@ void runBenchmarkOpenMP(benchmark::State& state,
     int numRepos = size;
 
     inArgsStruct inArgsHost;
-    inArgsHost.discountCurve = (repoYieldTermStruct *)malloc(numRepos * sizeof(repoYieldTermStruct));
-    inArgsHost.repoCurve = (repoYieldTermStruct *)malloc(numRepos * sizeof(repoYieldTermStruct));
-    inArgsHost.settlementDate = (repoDateStruct *)malloc(numRepos * sizeof(repoDateStruct));
-    inArgsHost.deliveryDate = (repoDateStruct *)malloc(numRepos * sizeof(repoDateStruct));
-    inArgsHost.maturityDate = (repoDateStruct *)malloc(numRepos * sizeof(repoDateStruct));
-    inArgsHost.repoDeliveryDate = (repoDateStruct *)malloc(numRepos * sizeof(repoDateStruct));
-    inArgsHost.bondCleanPrice = (dataType *)malloc(numRepos * sizeof(dataType));
-    inArgsHost.bond = (bondStruct *)malloc(numRepos * sizeof(bondStruct));
-    inArgsHost.dummyStrike = (dataType *)malloc(numRepos * sizeof(dataType));
+    inArgsHost.discountCurve = new repoYieldTermStruct[numRepos];
+    inArgsHost.repoCurve = new repoYieldTermStruct[numRepos];
+    inArgsHost.settlementDate = new repoDateStruct[numRepos];
+    inArgsHost.deliveryDate = new repoDateStruct[numRepos];
+    inArgsHost.maturityDate = new repoDateStruct[numRepos];
+    inArgsHost.repoDeliveryDate = new repoDateStruct[numRepos];
+    inArgsHost.bondCleanPrice = new dataType[numRepos];
+    inArgsHost.bond = new bondStruct[numRepos];
+    inArgsHost.dummyStrike = new dataType[numRepos];
 
     initArgs(inArgsHost, numRepos);
 
     resultsStruct resultsHost;
-    resultsHost.dirtyPrice = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.accruedAmountSettlement = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.accruedAmountDeliveryDate = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.cleanPrice = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.forwardSpotIncome = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.underlyingBondFwd = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.repoNpv = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.repoCleanForwardPrice = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.repoDirtyForwardPrice = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.repoImpliedYield = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.marketRepoRate = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.bondForwardVal = (dataType *)malloc(numRepos * sizeof(dataType));
+    resultsHost.dirtyPrice = new dataType[numRepos];
+    resultsHost.accruedAmountSettlement = new dataType[numRepos];
+    resultsHost.accruedAmountDeliveryDate = new dataType[numRepos];
+    resultsHost.cleanPrice = new dataType[numRepos];
+    resultsHost.forwardSpotIncome = new dataType[numRepos];
+    resultsHost.underlyingBondFwd = new dataType[numRepos];
+    resultsHost.repoNpv = new dataType[numRepos];
+    resultsHost.repoCleanForwardPrice = new dataType[numRepos];
+    resultsHost.repoDirtyForwardPrice = new dataType[numRepos];
+    resultsHost.repoImpliedYield = new dataType[numRepos];
+    resultsHost.marketRepoRate = new dataType[numRepos];
+    resultsHost.bondForwardVal = new dataType[numRepos];
 
     // Warm-up
     for(size_t i = 0; i < warmup_size; i++)
@@ -221,28 +221,28 @@ void runBenchmarkOpenMP(benchmark::State& state,
         state.SetIterationTime(elapsed_seconds.count());
     }
 
-    free(resultsHost.dirtyPrice);
-    free(resultsHost.accruedAmountSettlement);
-    free(resultsHost.accruedAmountDeliveryDate);
-    free(resultsHost.cleanPrice);
-    free(resultsHost.forwardSpotIncome);
-    free(resultsHost.underlyingBondFwd);
-    free(resultsHost.repoNpv);
-    free(resultsHost.repoCleanForwardPrice);
-    free(resultsHost.repoDirtyForwardPrice);
-    free(resultsHost.repoImpliedYield);
-    free(resultsHost.marketRepoRate);
-    free(resultsHost.bondForwardVal);
+    delete [] resultsHost.dirtyPrice;
+    delete [] resultsHost.accruedAmountSettlement;
+    delete [] resultsHost.accruedAmountDeliveryDate;
+    delete [] resultsHost.cleanPrice;
+    delete [] resultsHost.forwardSpotIncome;
+    delete [] resultsHost.underlyingBondFwd;
+    delete [] resultsHost.repoNpv;
+    delete [] resultsHost.repoCleanForwardPrice;
+    delete [] resultsHost.repoDirtyForwardPrice;
+    delete [] resultsHost.repoImpliedYield;
+    delete [] resultsHost.marketRepoRate;
+    delete [] resultsHost.bondForwardVal;
 
-    free(inArgsHost.discountCurve);
-    free(inArgsHost.repoCurve);
-    free(inArgsHost.settlementDate);
-    free(inArgsHost.deliveryDate);
-    free(inArgsHost.maturityDate);
-    free(inArgsHost.repoDeliveryDate);
-    free(inArgsHost.bondCleanPrice);
-    free(inArgsHost.bond);
-    free(inArgsHost.dummyStrike);
+    delete [] inArgsHost.discountCurve;
+    delete [] inArgsHost.repoCurve;
+    delete [] inArgsHost.settlementDate;
+    delete [] inArgsHost.deliveryDate;
+    delete [] inArgsHost.maturityDate;
+    delete [] inArgsHost.repoDeliveryDate;
+    delete [] inArgsHost.bondCleanPrice;
+    delete [] inArgsHost.bond;
+    delete [] inArgsHost.dummyStrike;
 }
 
 #ifdef BUILD_HIP
@@ -252,15 +252,15 @@ void runBenchmarkHipV1(benchmark::State& state,
     int numRepos = size;
 
     inArgsStruct inArgsHost;
-    inArgsHost.discountCurve = (repoYieldTermStruct *)malloc(numRepos * sizeof(repoYieldTermStruct));
-    inArgsHost.repoCurve = (repoYieldTermStruct *)malloc(numRepos * sizeof(repoYieldTermStruct));
-    inArgsHost.settlementDate = (repoDateStruct *)malloc(numRepos * sizeof(repoDateStruct));
-    inArgsHost.deliveryDate = (repoDateStruct *)malloc(numRepos * sizeof(repoDateStruct));
-    inArgsHost.maturityDate = (repoDateStruct *)malloc(numRepos * sizeof(repoDateStruct));
-    inArgsHost.repoDeliveryDate = (repoDateStruct *)malloc(numRepos * sizeof(repoDateStruct));
-    inArgsHost.bondCleanPrice = (dataType *)malloc(numRepos * sizeof(dataType));
-    inArgsHost.bond = (bondStruct *)malloc(numRepos * sizeof(bondStruct));
-    inArgsHost.dummyStrike = (dataType *)malloc(numRepos * sizeof(dataType));
+    inArgsHost.discountCurve = new repoYieldTermStruct[numRepos];
+    inArgsHost.repoCurve = new repoYieldTermStruct[numRepos];
+    inArgsHost.settlementDate = new repoDateStruct[numRepos];
+    inArgsHost.deliveryDate = new repoDateStruct[numRepos];
+    inArgsHost.maturityDate = new repoDateStruct[numRepos];
+    inArgsHost.repoDeliveryDate = new repoDateStruct[numRepos];
+    inArgsHost.bondCleanPrice = new dataType[numRepos];
+    inArgsHost.bond = new bondStruct[numRepos];
+    inArgsHost.dummyStrike = new dataType[numRepos];
 
     initArgs(inArgsHost, numRepos);
 
@@ -351,15 +351,15 @@ void runBenchmarkHipV1(benchmark::State& state,
     HIP_CALL(hipFree(inArgsGpu.dummyStrike));
     HIP_CALL(hipStreamDestroy(stream));
 
-    free(inArgsHost.discountCurve);
-    free(inArgsHost.repoCurve);
-    free(inArgsHost.settlementDate);
-    free(inArgsHost.deliveryDate);
-    free(inArgsHost.maturityDate);
-    free(inArgsHost.repoDeliveryDate);
-    free(inArgsHost.bondCleanPrice);
-    free(inArgsHost.bond);
-    free(inArgsHost.dummyStrike);
+    delete [] inArgsHost.discountCurve;
+    delete [] inArgsHost.repoCurve;
+    delete [] inArgsHost.settlementDate;
+    delete [] inArgsHost.deliveryDate;
+    delete [] inArgsHost.maturityDate;
+    delete [] inArgsHost.repoDeliveryDate;
+    delete [] inArgsHost.bondCleanPrice;
+    delete [] inArgsHost.bond;
+    delete [] inArgsHost.dummyStrike;
 }
 
 void runBenchmarkHipV2(benchmark::State& state,
@@ -368,31 +368,31 @@ void runBenchmarkHipV2(benchmark::State& state,
     int numRepos = size;
 
     inArgsStruct inArgsHost;
-    inArgsHost.discountCurve = (repoYieldTermStruct *)malloc(numRepos * sizeof(repoYieldTermStruct));
-    inArgsHost.repoCurve = (repoYieldTermStruct *)malloc(numRepos * sizeof(repoYieldTermStruct));
-    inArgsHost.settlementDate = (repoDateStruct *)malloc(numRepos * sizeof(repoDateStruct));
-    inArgsHost.deliveryDate = (repoDateStruct *)malloc(numRepos * sizeof(repoDateStruct));
-    inArgsHost.maturityDate = (repoDateStruct *)malloc(numRepos * sizeof(repoDateStruct));
-    inArgsHost.repoDeliveryDate = (repoDateStruct *)malloc(numRepos * sizeof(repoDateStruct));
-    inArgsHost.bondCleanPrice = (dataType *)malloc(numRepos * sizeof(dataType));
-    inArgsHost.bond = (bondStruct *)malloc(numRepos * sizeof(bondStruct));
-    inArgsHost.dummyStrike = (dataType *)malloc(numRepos * sizeof(dataType));
+    inArgsHost.discountCurve = new repoYieldTermStruct[numRepos];
+    inArgsHost.repoCurve = new repoYieldTermStruct[numRepos];
+    inArgsHost.settlementDate = new repoDateStruct[numRepos];
+    inArgsHost.deliveryDate = new repoDateStruct[numRepos];
+    inArgsHost.maturityDate = new repoDateStruct[numRepos];
+    inArgsHost.repoDeliveryDate = new repoDateStruct[numRepos];
+    inArgsHost.bondCleanPrice = new dataType[numRepos];
+    inArgsHost.bond = new bondStruct[numRepos];
+    inArgsHost.dummyStrike = new dataType[numRepos];
 
     initArgs(inArgsHost, numRepos);
 
     resultsStruct resultsHost;
-    resultsHost.dirtyPrice = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.accruedAmountSettlement = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.accruedAmountDeliveryDate = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.cleanPrice = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.forwardSpotIncome = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.underlyingBondFwd = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.repoNpv = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.repoCleanForwardPrice = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.repoDirtyForwardPrice = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.repoImpliedYield = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.marketRepoRate = (dataType *)malloc(numRepos * sizeof(dataType));
-    resultsHost.bondForwardVal = (dataType *)malloc(numRepos * sizeof(dataType));
+    resultsHost.dirtyPrice = new dataType[numRepos];
+    resultsHost.accruedAmountSettlement = new dataType[numRepos];
+    resultsHost.accruedAmountDeliveryDate = new dataType[numRepos];
+    resultsHost.cleanPrice = new dataType[numRepos];
+    resultsHost.forwardSpotIncome = new dataType[numRepos];
+    resultsHost.underlyingBondFwd = new dataType[numRepos];
+    resultsHost.repoNpv = new dataType[numRepos];
+    resultsHost.repoCleanForwardPrice = new dataType[numRepos];
+    resultsHost.repoDirtyForwardPrice = new dataType[numRepos];
+    resultsHost.repoImpliedYield = new dataType[numRepos];
+    resultsHost.marketRepoRate = new dataType[numRepos];
+    resultsHost.bondForwardVal = new dataType[numRepos];
 
     inArgsStruct inArgsGpu;
     resultsStruct resultsGpu;
@@ -503,28 +503,28 @@ void runBenchmarkHipV2(benchmark::State& state,
     HIP_CALL(hipFree(inArgsGpu.dummyStrike));
     HIP_CALL(hipStreamDestroy(stream));
 
-    free(resultsHost.dirtyPrice);
-    free(resultsHost.accruedAmountSettlement);
-    free(resultsHost.accruedAmountDeliveryDate);
-    free(resultsHost.cleanPrice);
-    free(resultsHost.forwardSpotIncome);
-    free(resultsHost.underlyingBondFwd);
-    free(resultsHost.repoNpv);
-    free(resultsHost.repoCleanForwardPrice);
-    free(resultsHost.repoDirtyForwardPrice);
-    free(resultsHost.repoImpliedYield);
-    free(resultsHost.marketRepoRate);
-    free(resultsHost.bondForwardVal);
+    delete [] resultsHost.dirtyPrice;
+    delete [] resultsHost.accruedAmountSettlement;
+    delete [] resultsHost.accruedAmountDeliveryDate;
+    delete [] resultsHost.cleanPrice;
+    delete [] resultsHost.forwardSpotIncome;
+    delete [] resultsHost.underlyingBondFwd;
+    delete [] resultsHost.repoNpv;
+    delete [] resultsHost.repoCleanForwardPrice;
+    delete [] resultsHost.repoDirtyForwardPrice;
+    delete [] resultsHost.repoImpliedYield;
+    delete [] resultsHost.marketRepoRate;
+    delete [] resultsHost.bondForwardVal;
 
-    free(inArgsHost.discountCurve);
-    free(inArgsHost.repoCurve);
-    free(inArgsHost.settlementDate);
-    free(inArgsHost.deliveryDate);
-    free(inArgsHost.maturityDate);
-    free(inArgsHost.repoDeliveryDate);
-    free(inArgsHost.bondCleanPrice);
-    free(inArgsHost.bond);
-    free(inArgsHost.dummyStrike);
+    delete [] inArgsHost.discountCurve;
+    delete [] inArgsHost.repoCurve;
+    delete [] inArgsHost.settlementDate;
+    delete [] inArgsHost.deliveryDate;
+    delete [] inArgsHost.maturityDate;
+    delete [] inArgsHost.repoDeliveryDate;
+    delete [] inArgsHost.bondCleanPrice;
+    delete [] inArgsHost.bond;
+    delete [] inArgsHost.dummyStrike;
 }
 #endif
 

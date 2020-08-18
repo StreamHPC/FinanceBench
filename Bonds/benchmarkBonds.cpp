@@ -101,21 +101,21 @@ void runBenchmarkCpu(benchmark::State& state,
     int numBonds = size;
 
     inArgsStruct inArgsHost;
-    inArgsHost.discountCurve = (bondsYieldTermStruct *)malloc(numBonds * sizeof(bondsYieldTermStruct));
-    inArgsHost.repoCurve = (bondsYieldTermStruct *)malloc(numBonds * sizeof(bondsYieldTermStruct));
-    inArgsHost.currDate = (bondsDateStruct *)malloc(numBonds * sizeof(bondsDateStruct));
-    inArgsHost.maturityDate = (bondsDateStruct *)malloc(numBonds * sizeof(bondsDateStruct));
-    inArgsHost.bondCleanPrice = (dataType *)malloc(numBonds * sizeof(dataType));
-    inArgsHost.bond = (bondStruct *)malloc(numBonds * sizeof(bondStruct));
-    inArgsHost.dummyStrike = (dataType *)malloc(numBonds * sizeof(dataType));
+    inArgsHost.discountCurve = new bondsYieldTermStruct[numBonds];
+    inArgsHost.repoCurve = new bondsYieldTermStruct[numBonds];
+    inArgsHost.currDate = new bondsDateStruct[numBonds];
+    inArgsHost.maturityDate = new bondsDateStruct[numBonds];
+    inArgsHost.bondCleanPrice = new dataType[numBonds];
+    inArgsHost.bond = new bondStruct[numBonds];
+    inArgsHost.dummyStrike = new dataType[numBonds];
 
     initArgs(inArgsHost, numBonds);
 
     resultsStruct resultsHost;
-    resultsHost.dirtyPrice = (dataType *)malloc(numBonds * sizeof(dataType));
-    resultsHost.accruedAmountCurrDate = (dataType *)malloc(numBonds * sizeof(dataType));
-    resultsHost.cleanPrice = (dataType *)malloc(numBonds * sizeof(dataType));
-    resultsHost.bondForwardVal = (dataType *)malloc(numBonds * sizeof(dataType));
+    resultsHost.dirtyPrice = new dataType[numBonds];
+    resultsHost.accruedAmountCurrDate = new dataType[numBonds];
+    resultsHost.cleanPrice = new dataType[numBonds];
+    resultsHost.bondForwardVal = new dataType[numBonds];
 
     // Warm-up
     for(size_t i = 0; i < warmup_size; i++)
@@ -135,18 +135,18 @@ void runBenchmarkCpu(benchmark::State& state,
         state.SetIterationTime(elapsed_seconds.count());
     }
 
-    free(resultsHost.dirtyPrice);
-    free(resultsHost.accruedAmountCurrDate);;
-    free(resultsHost.cleanPrice);;
-    free(resultsHost.bondForwardVal);;
+    delete [] resultsHost.dirtyPrice;
+    delete [] resultsHost.accruedAmountCurrDate;
+    delete [] resultsHost.cleanPrice;
+    delete [] resultsHost.bondForwardVal;
 
-    free(inArgsHost.discountCurve);
-    free(inArgsHost.repoCurve);
-    free(inArgsHost.currDate);
-    free(inArgsHost.maturityDate);
-    free(inArgsHost.bondCleanPrice);
-    free(inArgsHost.bond);
-    free(inArgsHost.dummyStrike);
+    delete [] inArgsHost.discountCurve;
+    delete [] inArgsHost.repoCurve;
+    delete [] inArgsHost.currDate;
+    delete [] inArgsHost.maturityDate;
+    delete [] inArgsHost.bondCleanPrice;
+    delete [] inArgsHost.bond;
+    delete [] inArgsHost.dummyStrike;
 }
 
 void runBenchmarkOpenMP(benchmark::State& state,
@@ -155,21 +155,21 @@ void runBenchmarkOpenMP(benchmark::State& state,
     int numBonds = size;
 
     inArgsStruct inArgsHost;
-    inArgsHost.discountCurve = (bondsYieldTermStruct *)malloc(numBonds * sizeof(bondsYieldTermStruct));
-    inArgsHost.repoCurve = (bondsYieldTermStruct *)malloc(numBonds * sizeof(bondsYieldTermStruct));
-    inArgsHost.currDate = (bondsDateStruct *)malloc(numBonds * sizeof(bondsDateStruct));
-    inArgsHost.maturityDate = (bondsDateStruct *)malloc(numBonds * sizeof(bondsDateStruct));
-    inArgsHost.bondCleanPrice = (dataType *)malloc(numBonds * sizeof(dataType));
-    inArgsHost.bond = (bondStruct *)malloc(numBonds * sizeof(bondStruct));
-    inArgsHost.dummyStrike = (dataType *)malloc(numBonds * sizeof(dataType));
+    inArgsHost.discountCurve = new bondsYieldTermStruct[numBonds];
+    inArgsHost.repoCurve = new bondsYieldTermStruct[numBonds];
+    inArgsHost.currDate = new bondsDateStruct[numBonds];
+    inArgsHost.maturityDate = new bondsDateStruct[numBonds];
+    inArgsHost.bondCleanPrice = new dataType[numBonds];
+    inArgsHost.bond = new bondStruct[numBonds];
+    inArgsHost.dummyStrike = new dataType[numBonds];
 
     initArgs(inArgsHost, numBonds);
 
     resultsStruct resultsHost;
-    resultsHost.dirtyPrice = (dataType *)malloc(numBonds * sizeof(dataType));
-    resultsHost.accruedAmountCurrDate = (dataType *)malloc(numBonds * sizeof(dataType));
-    resultsHost.cleanPrice = (dataType *)malloc(numBonds * sizeof(dataType));
-    resultsHost.bondForwardVal = (dataType *)malloc(numBonds * sizeof(dataType));
+    resultsHost.dirtyPrice = new dataType[numBonds];
+    resultsHost.accruedAmountCurrDate = new dataType[numBonds];
+    resultsHost.cleanPrice = new dataType[numBonds];
+    resultsHost.bondForwardVal = new dataType[numBonds];
 
     // Warm-up
     for(size_t i = 0; i < warmup_size; i++)
@@ -189,17 +189,17 @@ void runBenchmarkOpenMP(benchmark::State& state,
         state.SetIterationTime(elapsed_seconds.count());
     }
 
-    free(resultsHost.dirtyPrice);
-    free(resultsHost.accruedAmountCurrDate);;
-    free(resultsHost.cleanPrice);;
-    free(resultsHost.bondForwardVal);;
-    free(inArgsHost.discountCurve);
-    free(inArgsHost.repoCurve);
-    free(inArgsHost.currDate);
-    free(inArgsHost.maturityDate);
-    free(inArgsHost.bondCleanPrice);
-    free(inArgsHost.bond);
-    free(inArgsHost.dummyStrike);
+    delete [] resultsHost.dirtyPrice;
+    delete [] resultsHost.accruedAmountCurrDate;
+    delete [] resultsHost.cleanPrice;
+    delete [] resultsHost.bondForwardVal;
+    delete [] inArgsHost.discountCurve;
+    delete [] inArgsHost.repoCurve;
+    delete [] inArgsHost.currDate;
+    delete [] inArgsHost.maturityDate;
+    delete [] inArgsHost.bondCleanPrice;
+    delete [] inArgsHost.bond;
+    delete [] inArgsHost.dummyStrike;
 }
 
 #ifdef BUILD_HIP
@@ -209,13 +209,13 @@ void runBenchmarkHipV1(benchmark::State& state,
     int numBonds = size;
 
     inArgsStruct inArgsHost;
-    inArgsHost.discountCurve = (bondsYieldTermStruct *)malloc(numBonds * sizeof(bondsYieldTermStruct));
-    inArgsHost.repoCurve = (bondsYieldTermStruct *)malloc(numBonds * sizeof(bondsYieldTermStruct));
-    inArgsHost.currDate = (bondsDateStruct *)malloc(numBonds * sizeof(bondsDateStruct));
-    inArgsHost.maturityDate = (bondsDateStruct *)malloc(numBonds * sizeof(bondsDateStruct));
-    inArgsHost.bondCleanPrice = (dataType *)malloc(numBonds * sizeof(dataType));
-    inArgsHost.bond = (bondStruct *)malloc(numBonds * sizeof(bondStruct));
-    inArgsHost.dummyStrike = (dataType *)malloc(numBonds * sizeof(dataType));
+    inArgsHost.discountCurve = new bondsYieldTermStruct[numBonds];
+    inArgsHost.repoCurve = new bondsYieldTermStruct[numBonds];
+    inArgsHost.currDate = new bondsDateStruct[numBonds];
+    inArgsHost.maturityDate = new bondsDateStruct[numBonds];
+    inArgsHost.bondCleanPrice = new dataType[numBonds];
+    inArgsHost.bond = new bondStruct[numBonds];
+    inArgsHost.dummyStrike = new dataType[numBonds];
 
     initArgs(inArgsHost, numBonds);
 
@@ -306,13 +306,13 @@ void runBenchmarkHipV1(benchmark::State& state,
     HIP_CALL(hipFree(bondForwardValGpu));
     HIP_CALL(hipStreamDestroy(stream));
 
-    free(inArgsHost.discountCurve);
-    free(inArgsHost.repoCurve);
-    free(inArgsHost.currDate);
-    free(inArgsHost.maturityDate);
-    free(inArgsHost.bondCleanPrice);
-    free(inArgsHost.bond);
-    free(inArgsHost.dummyStrike);
+    delete [] inArgsHost.discountCurve;
+    delete [] inArgsHost.repoCurve;
+    delete [] inArgsHost.currDate;
+    delete [] inArgsHost.maturityDate;
+    delete [] inArgsHost.bondCleanPrice;
+    delete [] inArgsHost.bond;
+    delete [] inArgsHost.dummyStrike;
 }
 
 void runBenchmarkHipV2(benchmark::State& state,
@@ -321,19 +321,19 @@ void runBenchmarkHipV2(benchmark::State& state,
     int numBonds = size;
 
     inArgsStruct inArgsHost;
-    inArgsHost.discountCurve = (bondsYieldTermStruct *)malloc(numBonds * sizeof(bondsYieldTermStruct));
-    inArgsHost.repoCurve = (bondsYieldTermStruct *)malloc(numBonds * sizeof(bondsYieldTermStruct));
-    inArgsHost.currDate = (bondsDateStruct *)malloc(numBonds * sizeof(bondsDateStruct));
-    inArgsHost.maturityDate = (bondsDateStruct *)malloc(numBonds * sizeof(bondsDateStruct));
-    inArgsHost.bondCleanPrice = (dataType *)malloc(numBonds * sizeof(dataType));
-    inArgsHost.bond = (bondStruct *)malloc(numBonds * sizeof(bondStruct));
-    inArgsHost.dummyStrike = (dataType *)malloc(numBonds * sizeof(dataType));
+    inArgsHost.discountCurve = new bondsYieldTermStruct[numBonds];
+    inArgsHost.repoCurve = new bondsYieldTermStruct[numBonds];
+    inArgsHost.currDate = new bondsDateStruct[numBonds];
+    inArgsHost.maturityDate = new bondsDateStruct[numBonds];
+    inArgsHost.bondCleanPrice = new dataType[numBonds];
+    inArgsHost.bond = new bondStruct[numBonds];
+    inArgsHost.dummyStrike = new dataType[numBonds];
 
     resultsStruct resultsFromGpu;
-    resultsFromGpu.dirtyPrice = (dataType *)malloc(numBonds * sizeof(dataType));
-    resultsFromGpu.accruedAmountCurrDate = (dataType *)malloc(numBonds * sizeof(dataType));;
-    resultsFromGpu.cleanPrice = (dataType *)malloc(numBonds * sizeof(dataType));;
-    resultsFromGpu.bondForwardVal = (dataType *)malloc(numBonds * sizeof(dataType));;
+    resultsFromGpu.dirtyPrice = new dataType[numBonds];
+    resultsFromGpu.accruedAmountCurrDate = new dataType[numBonds];;
+    resultsFromGpu.cleanPrice = new dataType[numBonds];;
+    resultsFromGpu.bondForwardVal = new dataType[numBonds];;
 
     initArgs(inArgsHost, numBonds);
 
@@ -436,17 +436,17 @@ void runBenchmarkHipV2(benchmark::State& state,
     HIP_CALL(hipFree(bondForwardValGpu));
     HIP_CALL(hipStreamDestroy(stream));
 
-    free(resultsFromGpu.dirtyPrice);
-    free(resultsFromGpu.accruedAmountCurrDate);;
-    free(resultsFromGpu.cleanPrice);;
-    free(resultsFromGpu.bondForwardVal);
-    free(inArgsHost.discountCurve);
-    free(inArgsHost.repoCurve);
-    free(inArgsHost.currDate);
-    free(inArgsHost.maturityDate);
-    free(inArgsHost.bondCleanPrice);
-    free(inArgsHost.bond);
-    free(inArgsHost.dummyStrike);
+    delete [] resultsFromGpu.dirtyPrice;
+    delete [] resultsFromGpu.accruedAmountCurrDate;
+    delete [] resultsFromGpu.cleanPrice;
+    delete [] resultsFromGpu.bondForwardVal;
+    delete [] inArgsHost.discountCurve;
+    delete [] inArgsHost.repoCurve;
+    delete [] inArgsHost.currDate;
+    delete [] inArgsHost.maturityDate;
+    delete [] inArgsHost.bondCleanPrice;
+    delete [] inArgsHost.bond;
+    delete [] inArgsHost.dummyStrike;
 }
 #endif
 

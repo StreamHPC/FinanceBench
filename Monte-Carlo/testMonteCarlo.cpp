@@ -49,7 +49,7 @@ TEST(MonteCarlo, OpenMP)
     srand(seed);
 
     monteCarloOptionStruct * optionStructs;
-    optionStructs = (monteCarloOptionStruct *)malloc(NUM_OPTIONS * sizeof(monteCarloOptionStruct));
+    optionStructs = new monteCarloOptionStruct[NUM_OPTIONS];
     initOptions(optionStructs);
 
     dataType * samplePricesCpu;
@@ -57,10 +57,10 @@ TEST(MonteCarlo, OpenMP)
     dataType * sampleWeights;
     dataType * times;
 
-    samplePricesCpu = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
-    samplePricesMp = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
-    sampleWeights = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
-    times = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
+    samplePricesCpu = new dataType[size * NUM_OPTIONS];
+    samplePricesMp = new dataType[size * NUM_OPTIONS];
+    sampleWeights = new dataType[size * NUM_OPTIONS];
+    times = new dataType[size * NUM_OPTIONS];
 
     monteCarloKernelCpu(
         samplePricesCpu, sampleWeights, times,
@@ -88,11 +88,11 @@ TEST(MonteCarlo, OpenMP)
 
     ASSERT_NEAR(cumPriceCpu, cumPriceMp, 0.5f);
 
-    free(samplePricesCpu);
-    free(samplePricesMp);
-    free(sampleWeights);
-    free(times);
-    free(optionStructs);
+    delete [] samplePricesCpu;
+    delete [] samplePricesMp;
+    delete [] sampleWeights;
+    delete [] times;
+    delete [] optionStructs;
 }
 
 #ifdef BUILD_HIP
@@ -103,7 +103,7 @@ TEST(MonteCarlo, Hip)
     srand(seed);
 
     monteCarloOptionStruct * optionStructs;
-    optionStructs = (monteCarloOptionStruct *)malloc(NUM_OPTIONS * sizeof(monteCarloOptionStruct));
+    optionStructs = new monteCarloOptionStruct[NUM_OPTIONS];
     initOptions(optionStructs);
 
     dataType * samplePricesCpu;
@@ -117,10 +117,10 @@ TEST(MonteCarlo, Hip)
     dataType * timesGpu;
     monteCarloOptionStruct * optionStructsGpu;
 
-    samplePricesCpu = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
-    samplePricesMp = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
-    sampleWeights = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
-    times = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
+    samplePricesCpu = new dataType[size * NUM_OPTIONS];
+    samplePricesMp = new dataType[size * NUM_OPTIONS];
+    sampleWeights = new dataType[size * NUM_OPTIONS];
+    times = new dataType[size * NUM_OPTIONS];
 
     monteCarloKernelCpu(
         samplePricesMp, sampleWeights, times,
@@ -173,11 +173,11 @@ TEST(MonteCarlo, Hip)
     HIP_CALL(hipFree(timesGpu));
     HIP_CALL(hipFree(optionStructsGpu));
 
-    free(samplePricesCpu);
-    free(samplePricesMp);
-    free(sampleWeights);
-    free(times);
-    free(optionStructs);
+    delete [] samplePricesCpu;
+    delete [] samplePricesMp;
+    delete [] sampleWeights;
+    delete [] times;
+    delete [] optionStructs;
 }
 
 TEST(MonteCarlo, HipOpt)
@@ -187,7 +187,7 @@ TEST(MonteCarlo, HipOpt)
     srand(seed);
 
     monteCarloOptionStruct * optionStructs;
-    optionStructs = (monteCarloOptionStruct *)malloc(NUM_OPTIONS * sizeof(monteCarloOptionStruct));
+    optionStructs = new monteCarloOptionStruct[NUM_OPTIONS];
     initOptions(optionStructs);
 
     dataType * samplePricesCpu;
@@ -205,10 +205,10 @@ TEST(MonteCarlo, HipOpt)
     dataType * timesGpu;
     monteCarloOptionStruct * optionStructsGpu;
 
-    samplePricesCpu = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
-    samplePricesMp = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
-    sampleWeights = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
-    times = (dataType *)malloc(NUM_OPTIONS * size * sizeof(dataType));
+    samplePricesCpu = new dataType[size * NUM_OPTIONS];
+    samplePricesMp = new dataType[size * NUM_OPTIONS];
+    sampleWeights = new dataType[size * NUM_OPTIONS];
+    times = new dataType[size * NUM_OPTIONS];
 
     monteCarloKernelCpu(
         samplePricesMp, sampleWeights, times,
@@ -263,10 +263,10 @@ TEST(MonteCarlo, HipOpt)
     HIP_CALL(hipFree(timesGpu));
     HIP_CALL(hipFree(optionStructsGpu));
 
-    free(samplePricesCpu);
-    free(samplePricesMp);
-    free(sampleWeights);
-    free(times);
-    free(optionStructs);
+    delete [] samplePricesCpu;
+    delete [] samplePricesMp;
+    delete [] sampleWeights;
+    delete [] times;
+    delete [] optionStructs;
 }
 #endif
