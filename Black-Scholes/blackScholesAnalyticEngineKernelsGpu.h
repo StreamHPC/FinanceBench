@@ -30,6 +30,10 @@ __global__ void getOutValOptionOpt(optionInputStruct * options,
                                    float * outputVals,
                                    int numVals);
 
+__global__ void getOutValOptionOpt(optionInputStruct_ options,
+                                   float * outputVals,
+                                   int numVals);
+
 __global__ void getOutValOptionOpt(char * type,
                                    float * data,
                                    float * outputVals,

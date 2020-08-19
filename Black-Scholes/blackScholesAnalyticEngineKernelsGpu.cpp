@@ -427,6 +427,71 @@ __global__ void getOutValOptionOpt(optionInputStruct * options,
 	}
 }
 
+__global__ void getOutValOptionOpt(optionInputStruct_ options,
+                                   float * outputVals,
+                                   int numVals)
+{
+    int optionNum = blockIdx.x * blockDim.x + threadIdx.x;
+
+	//check if within current options
+	if(optionNum < numVals)
+	{
+        int _type = options.type[optionNum];
+        float _strike = options.strike[optionNum];
+        float _spot = options.spot[optionNum];
+        float _q = options.q[optionNum];
+        float _r = options.r[optionNum];
+        float _t = options.t[optionNum];
+        float _vol = options.vol[optionNum];
+
+		payoffStruct currPayoff;
+		currPayoff.type = _type;
+		currPayoff.strike = _strike;
+
+		yieldTermStruct qTS;
+		qTS.timeYearFraction = _t;
+		qTS.forward = _q;
+
+		yieldTermStruct rTS;
+		rTS.timeYearFraction = _t;
+		rTS.forward = _r;
+
+		blackVolStruct volTS;
+		volTS.timeYearFraction = _t;
+		volTS.volatility = _vol;
+
+		blackScholesMertStruct stochProcess;
+		stochProcess.x0 = _spot;
+		stochProcess.dividendTS = qTS;
+		stochProcess.riskFreeTS = rTS;
+		stochProcess.blackVolTS = volTS;
+
+		optionStruct currOption;
+		currOption.payoff = currPayoff;
+		currOption.yearFractionTime = _t;
+		currOption.pricingEngine = stochProcess;
+
+		float variance = getBlackVolBlackVar(currOption.pricingEngine.blackVolTS);
+		float dividendDiscount = getDiscountOnDividendYield(currOption.yearFractionTime, currOption.pricingEngine.dividendTS);
+		float riskFreeDiscount = getDiscountOnRiskFreeRate(currOption.yearFractionTime, currOption.pricingEngine.riskFreeTS);
+		float __spot = currOption.pricingEngine.x0;
+
+		float forwardPrice = __spot * dividendDiscount / riskFreeDiscount;
+
+		//declare the blackCalcStruct
+		blackCalcStruct blackCalc;
+
+		//initialize the calculator
+		initBlackCalculatorV2(blackCalc, currOption.payoff, forwardPrice, sqrt(variance), riskFreeDiscount);
+
+		//retrieve the results values
+		float resultVal = getResultVal(blackCalc);
+
+		//write the resulting value to global memory
+		outputVals[optionNum] = resultVal;
+	}
+}
+
 __global__ void getOutValOptionOpt(char * type,
                                    float * data,
                                    float * outputVals,

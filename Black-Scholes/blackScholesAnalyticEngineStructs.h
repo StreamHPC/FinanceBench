@@ -129,4 +129,17 @@ typedef struct
     float tol;
 } optionInputStruct;
 
+typedef struct
+{
+    char * type;
+    float * strike;
+    float * spot;
+    float * q;
+    float * r;
+    float * t;
+    float * vol;
+    float * value;
+    float * tol;
+} optionInputStruct_;
+
 #endif //BLACK_SCHOLES_ANALYTIC_ENGINE_STRUCTS_H
