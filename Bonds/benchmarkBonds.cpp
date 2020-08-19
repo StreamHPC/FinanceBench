@@ -448,6 +448,148 @@ void runBenchmarkHipV2(benchmark::State& state,
     delete [] inArgsHost.bond;
     delete [] inArgsHost.dummyStrike;
 }
+
+void runBenchmarkHipV3(benchmark::State& state,
+                        size_t size)
+{
+    int numBonds = size;
+
+    inArgsStruct inArgsHost;
+    inArgsHost.discountCurve = new bondsYieldTermStruct[numBonds];
+    inArgsHost.repoCurve = new bondsYieldTermStruct[numBonds];
+    inArgsHost.currDate = new bondsDateStruct[numBonds];
+    inArgsHost.maturityDate = new bondsDateStruct[numBonds];
+    inArgsHost.bondCleanPrice = new dataType[numBonds];
+    inArgsHost.bond = new bondStruct[numBonds];
+    inArgsHost.dummyStrike = new dataType[numBonds];
+
+    resultsStruct resultsFromGpu;
+    resultsFromGpu.dirtyPrice = new dataType[numBonds];
+    resultsFromGpu.accruedAmountCurrDate = new dataType[numBonds];;
+    resultsFromGpu.cleanPrice = new dataType[numBonds];;
+    resultsFromGpu.bondForwardVal = new dataType[numBonds];;
+
+    initArgs(inArgsHost, numBonds);
+
+    bondsYieldTermStruct * discountCurveGpu;
+    bondsYieldTermStruct * repoCurveGpu;
+    bondsDateStruct * currDateGpu;
+    bondsDateStruct * maturityDateGpu;
+    dataType * bondCleanPriceGpu;
+    bondStruct * bondGpu;
+    dataType * dummyStrikeGpu;
+    dataType * dirtyPriceGpu;
+    dataType * accruedAmountCurrDateGpu;
+    dataType * cleanPriceGpu;
+    dataType * bondForwardValGpu;
+
+    hipStream_t stream1, stream2;
+    HIP_CALL(hipStreamCreateWithFlags(&stream1, hipStreamNonBlocking));
+    HIP_CALL(hipStreamCreateWithFlags(&stream2, hipStreamNonBlocking));
+
+    HIP_CALL(hipMalloc(&discountCurveGpu, numBonds * sizeof(bondsYieldTermStruct)));
+    HIP_CALL(hipMalloc(&repoCurveGpu, numBonds * sizeof(bondsYieldTermStruct)));
+    HIP_CALL(hipMalloc(&currDateGpu, numBonds * sizeof(bondsDateStruct)));
+    HIP_CALL(hipMalloc(&maturityDateGpu, numBonds * sizeof(bondsDateStruct)));
+    HIP_CALL(hipMalloc(&bondCleanPriceGpu, numBonds * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&bondGpu, numBonds * sizeof(bondStruct)));
+    HIP_CALL(hipMalloc(&dummyStrikeGpu, numBonds * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&dirtyPriceGpu, numBonds * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&accruedAmountCurrDateGpu, numBonds * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&cleanPriceGpu, numBonds * sizeof(dataType)));
+    HIP_CALL(hipMalloc(&bondForwardValGpu, numBonds * sizeof(dataType)));
+
+    inArgsStruct inArgs;
+    inArgs.discountCurve    = discountCurveGpu;
+    inArgs.repoCurve        = repoCurveGpu;
+    inArgs.currDate   = currDateGpu;
+    inArgs.maturityDate     = maturityDateGpu;
+    inArgs.bondCleanPrice   = bondCleanPriceGpu;
+    inArgs.bond             = bondGpu;
+    inArgs.dummyStrike      = dummyStrikeGpu;
+
+    resultsStruct results;
+    results.dirtyPrice                = dirtyPriceGpu;
+    results.accruedAmountCurrDate  = accruedAmountCurrDateGpu;
+    results.cleanPrice                = cleanPriceGpu;
+    results.bondForwardVal         = bondForwardValGpu;
+
+    dim3 grid((ceil(((float)numBonds)/((float)256))), 1, 1);
+    dim3 threads(256, 1, 1);
+
+    // Warm-up
+    for(size_t i = 0; i < warmup_size; i++)
+    {
+        HIP_CALL(hipMemcpyAsync(discountCurveGpu, inArgsHost.discountCurve, numBonds * sizeof(bondsYieldTermStruct), hipMemcpyHostToDevice, stream1));
+        HIP_CALL(hipMemcpyAsync(repoCurveGpu, inArgsHost.repoCurve, numBonds * sizeof(bondsYieldTermStruct), hipMemcpyHostToDevice, stream2));
+        HIP_CALL(hipMemcpyAsync(currDateGpu, inArgsHost.currDate, numBonds * sizeof(bondsDateStruct), hipMemcpyHostToDevice, stream1));
+        HIP_CALL(hipMemcpyAsync(maturityDateGpu, inArgsHost.maturityDate, numBonds * sizeof(bondsDateStruct), hipMemcpyHostToDevice, stream2));
+        HIP_CALL(hipMemcpyAsync(bondCleanPriceGpu, inArgsHost.bondCleanPrice, numBonds * sizeof(dataType), hipMemcpyHostToDevice, stream1));
+        HIP_CALL(hipMemcpyAsync(bondGpu, inArgsHost.bond, numBonds * sizeof(bondStruct), hipMemcpyHostToDevice, stream2));
+        HIP_CALL(hipMemcpyAsync(dummyStrikeGpu, inArgsHost.dummyStrike, numBonds * sizeof(dataType), hipMemcpyHostToDevice, stream1));
+        HIP_CALL(hipStreamSynchronize(stream1));
+        HIP_CALL(hipStreamSynchronize(stream2));
+
+        hipLaunchKernelGGL((getBondsResultsGpu), dim3(grid), dim3(threads), 0, stream1, inArgs, results, numBonds);
+        HIP_CALL(hipStreamSynchronize(stream1));
+    }
+
+    for(auto _ : state)
+    {
+        auto start = std::chrono::high_resolution_clock::now();
+
+        HIP_CALL(hipMemcpyAsync(discountCurveGpu, inArgsHost.discountCurve, numBonds * sizeof(bondsYieldTermStruct), hipMemcpyHostToDevice, stream1));
+        HIP_CALL(hipMemcpyAsync(repoCurveGpu, inArgsHost.repoCurve, numBonds * sizeof(bondsYieldTermStruct), hipMemcpyHostToDevice, stream2));
+        HIP_CALL(hipMemcpyAsync(currDateGpu, inArgsHost.currDate, numBonds * sizeof(bondsDateStruct), hipMemcpyHostToDevice, stream1));
+        HIP_CALL(hipMemcpyAsync(maturityDateGpu, inArgsHost.maturityDate, numBonds * sizeof(bondsDateStruct), hipMemcpyHostToDevice, stream2));
+        HIP_CALL(hipMemcpyAsync(bondCleanPriceGpu, inArgsHost.bondCleanPrice, numBonds * sizeof(dataType), hipMemcpyHostToDevice, stream1));
+        HIP_CALL(hipMemcpyAsync(bondGpu, inArgsHost.bond, numBonds * sizeof(bondStruct), hipMemcpyHostToDevice, stream2));
+        HIP_CALL(hipMemcpyAsync(dummyStrikeGpu, inArgsHost.dummyStrike, numBonds * sizeof(dataType), hipMemcpyHostToDevice, stream1));
+        HIP_CALL(hipStreamSynchronize(stream1));
+        HIP_CALL(hipStreamSynchronize(stream2));
+
+        hipLaunchKernelGGL((getBondsResultsGpu), dim3(grid), dim3(threads), 0, stream1, inArgs, results, numBonds);
+        HIP_CALL(hipStreamSynchronize(stream1));
+
+        HIP_CALL(hipMemcpyAsync(resultsFromGpu.dirtyPrice, dirtyPriceGpu, numBonds * sizeof(dataType), hipMemcpyDeviceToHost, stream1));
+		HIP_CALL(hipMemcpyAsync(resultsFromGpu.accruedAmountCurrDate, accruedAmountCurrDateGpu, numBonds * sizeof(dataType), hipMemcpyDeviceToHost, stream2));
+		HIP_CALL(hipMemcpyAsync(resultsFromGpu.cleanPrice, cleanPriceGpu, numBonds * sizeof(dataType), hipMemcpyDeviceToHost, stream1));
+		HIP_CALL(hipMemcpyAsync(resultsFromGpu.bondForwardVal, bondForwardValGpu, numBonds * sizeof(dataType), hipMemcpyDeviceToHost, stream2));
+        HIP_CALL(hipStreamSynchronize(stream1));
+        HIP_CALL(hipStreamSynchronize(stream2));
+
+        auto end = std::chrono::high_resolution_clock::now();
+        auto elapsed_seconds =
+            std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+        state.SetIterationTime(elapsed_seconds.count());
+    }
+
+    HIP_CALL(hipFree(discountCurveGpu));
+    HIP_CALL(hipFree(repoCurveGpu));
+    HIP_CALL(hipFree(currDateGpu));
+    HIP_CALL(hipFree(maturityDateGpu));
+    HIP_CALL(hipFree(bondCleanPriceGpu));
+    HIP_CALL(hipFree(bondGpu));
+    HIP_CALL(hipFree(dummyStrikeGpu));
+    HIP_CALL(hipFree(dirtyPriceGpu));
+    HIP_CALL(hipFree(accruedAmountCurrDateGpu));
+    HIP_CALL(hipFree(cleanPriceGpu));
+    HIP_CALL(hipFree(bondForwardValGpu));
+    HIP_CALL(hipStreamDestroy(stream1));
+    HIP_CALL(hipStreamDestroy(stream2));
+
+    delete [] resultsFromGpu.dirtyPrice;
+    delete [] resultsFromGpu.accruedAmountCurrDate;
+    delete [] resultsFromGpu.cleanPrice;
+    delete [] resultsFromGpu.bondForwardVal;
+    delete [] inArgsHost.discountCurve;
+    delete [] inArgsHost.repoCurve;
+    delete [] inArgsHost.currDate;
+    delete [] inArgsHost.maturityDate;
+    delete [] inArgsHost.bondCleanPrice;
+    delete [] inArgsHost.bond;
+    delete [] inArgsHost.dummyStrike;
+}
 #endif
 
 int main(int argc, char *argv[])
@@ -495,6 +637,10 @@ int main(int argc, char *argv[])
         benchmark::RegisterBenchmark(
             ("bondsHip (+ Transfers)"),
             [=](benchmark::State& state) { runBenchmarkHipV2(state, size); }
+        ),
+        benchmark::RegisterBenchmark(
+            ("bondsHip (+ 2-Stream Transfers)"),
+            [=](benchmark::State& state) { runBenchmarkHipV3(state, size); }
         ),
         #endif
     };
