@@ -617,8 +617,8 @@ void runBenchmarkHipV8(benchmark::State& state,
     float * rGpu;
     float * tGpu;
     float * volGpu;
-    float * valueGpu;
-    float * tolGpu;
+    float * valueGpu = nullptr;
+    float * tolGpu = nullptr;
     float * outputValsGpu;
 
     hipStream_t stream;

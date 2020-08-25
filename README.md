@@ -1,37 +1,88 @@
-FinanceBench
-------------
+# FinanceBench
 
-* Scott Grauer-Gray <grauerg@udel.edu>
-* Will Killian <killian@udel.edu>
-* Robert Searles <rsearles@udel.edu>
-* John Cavazos <cavazos@udel.edu>
+HIP Implementation of FinanceBench project.
 
-This contains codes for Black-Scholes, Monte-Carlo, Bonds, and Repo financial applications which can be run on the CPU and GPU.  All the codes are described in the following paper and any work that uses these codes should cite this paper:
+## Requirements
 
-"Accelerating Financial Applications on the GPU" which was presented at the Sixth Workshop on General Purpose Processing Using GPUs (GPGPU 6)
+* Git
+* CMake (3.5.1 or later)
+* OpenMP
+* For AMD GPUs:
+  * AMD [ROCm](https://rocm.github.io/install.html) platform (1.8.0 or later)
+    * Including [HIP-clang](https://github.com/ROCm-Developer-Tools/HIP/blob/master/INSTALL.md#hip-clang) compiler, which must be
+      set as C++ compiler on ROCm platform.
+* For NVIDIA GPUs:
+  * CUDA Toolkit
 
+Optional:
 
-README-parameters.txt contains information on the parameters in each application.
+* [GTest](https://github.com/google/googletest)
+  * Required only for tests. Building tests is enabled by default.
+  * It will be automatically downloaded and built by CMake script.
+* [Google Benchmark](https://github.com/google/benchmark)
+  * Required only for benchmarks. Building benchmarks is enabled by default.
+  * It will be automatically downloaded and built by cmake script.
 
-Directions (tested for Linux-based systems w/ gcc/g++ compiler, NVIDIA GPU, and CAPS Compiler for HMPP/OpenACC):
+## Build And Install
 
-For CUDA/OpenCL codes (CUDA available for each application, OpenCL available for Black-Scholes
-and Monte-Carlo):
+```shell
+# Go to FinanceBench directory, create and go to the build directory.
+cd FinanceBench; mkdir build; cd build
 
-1. Set the PATH and LD_LIBRARY_PATH environment variables to point to the appropriate locations for CUDA/OpenCL.
-2. Navigate to CUDA/OpenCL folder in target application.
-3. Run Makefile (by using "make" command).
-4. Application executable should be create and can be run.
+# Configure FinanceBench, setup options for your system.
+# Build options:
+#   BUILD_HIP - ON by default,
+#   BUILD_TEST - ON by default,
+#   BUILD_BENCHMARK - ON by default.
+#
+# ! IMPORTANT !
+# Set C++ compiler to HCC or HIP-clang. You can do it by adding 'CXX=<path-to-compiler>'
+# before 'cmake' or setting cmake option 'CMAKE_CXX_COMPILER' to path to the compiler.
+#
+[CXX=hipcc] cmake ../. # or cmake-gui ../.
 
-For HMPP/OpenACC Codes:
+# To configure FinanceBench for Nvidia platforms, 'CXX=<path-to-nvcc>', `CXX=nvcc` or omitting the flag
+# entirely before 'cmake' is sufficient
+[CXX=nvcc] cmake -DBUILD_TEST=ON ../. # or cmake-gui ../.
+# or
+cmake -DBUILD_TEST=ON ../. # or cmake-gui ../.
+# or to build benchmarks
+cmake -DBUILD_BENCHMARK=ON ../.
 
-1. Set the PATH and LD_LIBRARY_PATH environment variables to point to the appropriate locations for CUDA/OpenCL.
-2. Set the environment variables needed for the HMPP/OpenACC compilation environment.
-3. Navigate to HMPP/OpenACC folder in target application.
-4. Run Makefile (by using "make" command).
-5. Application executable should be create and can be run.
+# Build
+make -j4
 
-For CPU/OpenMP Codes (assuming using g++ compiler):
+# Optionally, run tests if they're enabled.
+ctest --output-on-failure
 
-1. Run Makefile (by using "make" command).
-2. Application executable should be create and can be run.
+# Package
+make package
+
+# Install
+[sudo] make install
+```
+
+## Running Unit Tests
+
+```shell
+# Go to FinanceBench build directory
+cd FinanceBench; cd build
+
+# To run all tests
+ctest
+
+# To run unit tests for FinanceBench
+./<unit-test-name>
+```
+
+## Running Benchmarks
+
+```shell
+# Go to FinanceBench build directory
+cd FinanceBench; cd build
+
+# To run benchmark:
+# Further option can be found using --help
+# [] Fields are optional
+./benchmark<function_name> [--device_id <device_id>] [--size <size>] [--trials <trials>]
+```

@@ -24,6 +24,9 @@ endif()
 
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE CACHE BOOL "Add paths to linker search and installed rpath")
 
+# AMD targets
+set(AMDGPU_TARGETS gfx803;gfx900;gfx906 CACHE STRING "List of specific machine types for library to target")
+
 # Verify that hcc compiler is used on ROCM platform
 include(cmake/VerifyCompiler.cmake)
 
@@ -41,9 +44,6 @@ option(BUILD_BENCHMARK "Build benchmarks" ON)
 
 # Get dependencies
 include(cmake/Dependencies.cmake)
-
-# AMD targets
-set(AMDGPU_TARGETS gfx803;gfx900;gfx906 CACHE STRING "List of specific machine types for library to target")
 
 if(BUILD_HIP)
     if(HIP_PLATFORM STREQUAL "nvcc")
