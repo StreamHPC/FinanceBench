@@ -1,8 +1,13 @@
 # FinanceBench
 
-HIP Implementation of FinanceBench project.
+This is the improved implementation of the FinanceBench project, which was published in 2013. This code is part of an academic research project "*Accelerating financial applications on the GPU*", which was presented in the workshop "*GPGPU-6: Proceedings of the 6th Workshop on General Purpose Processor Using Graphics Processing*", March 2013. Citation of publication:
+> Scott Grauer-Gray, William Killian, Robert Searles, and John Cavazos. 2013. Accelerating financial applications on the GPU. In Proceedings of the 6th Workshop on General Purpose Processor Using Graphics Processing Units (GPGPU-6). Association for Computing Machinery, New York, NY, USA, 127–136. DOI:https://doi.org/10.1145/2458523.2458536
+
+The original code supported several backends. Currently only OpenMP for CPUs and CUDA/HIP for Nvidia and AMD GPUs are supported, while we improve performance.
 
 ## Requirements
+
+To build te code, you need:
 
 * Git
 * CMake (3.5.1 or later)
@@ -13,17 +18,16 @@ HIP Implementation of FinanceBench project.
       set as C++ compiler on ROCm platform.
 * For NVIDIA GPUs:
   * CUDA Toolkit
-
-Optional:
-
-* [GTest](https://github.com/google/googletest)
-  * Required only for tests. Building tests is enabled by default.
-  * It will be automatically downloaded and built by CMake script.
 * [Google Benchmark](https://github.com/google/benchmark)
   * Required only for benchmarks. Building benchmarks is enabled by default.
   * It will be automatically downloaded and built by cmake script.
+* [GTest](https://github.com/google/googletest)
+  * Required only for tests. Building tests is enabled by default.
+  * It will be automatically downloaded and built by CMake script.
 
 ## Build And Install
+
+Below is the explanation how to build with Linux and `make`. When you use Windows, make sure you use cmake-gui and build for your Visual Studio version. The variables to change are the same.
 
 ```shell
 # Go to FinanceBench directory, create and go to the build directory.
